@@ -1,0 +1,10 @@
+{
+  "name": "GunGameArena",
+  "version_number": "0.1.0",
+  "website_url": "https://github.com/shaha/GunGameArena",
+  "description": "GunGame companion: sosigs fight each other (FFA or teams), smarter match flow, and a Roblox-style leaderboard with portraits.",
+  "dependencies": [
+    "BepInEx-BepInExPack_H3VR-5.4.1700",
+    "Kodeman-GunGame-1.0.2"
+  ]
+}
