@@ -145,69 +145,72 @@ Slot vacancy: a slot is vacant when its sosig reference is null (Unity-destroyed
 Problem: GunGame picks a random spawner (skipping the two nearest the player) and sends
 everyone to random waypoints; sosigs shoot the nearest visible hostile. With every sosig
 hostile to every other, they would brawl where they spawn and ignore the player until
-walked into. Four independently switchable behaviours fix this (config section ).
+walked into. Four independently switchable behaviours fix this (config section `Behaviour`).
 
 ### 4b.1 Spread-out spawns
 
-Harmony prefix on  replaces the random
-pick: among spawners allowed by GunGame's own rule (not the nearest to the player, nor the  farthest), choose the one
+Harmony prefix on `SosigBehavior.SpawnSosigRandomPlace(SosigEnemyID)` replaces the random
+pick: among spawners allowed by GunGame's own rule (not the `IgnoredSpawnersCloseToPlayer`
+nearest to the player, nor the `IgnoredSpawnersFarFromPlayer` farthest), choose the one
 that maximises the minimum distance to every living sosig and to the player; break ties
-randomly. Rest of the method (Spawn + register in ) is re-implemented identically.
-Config  (bool, true).
+randomly. Rest of the method (Spawn + register in `Sosigs`) is re-implemented identically.
+Config `SpreadSpawns` (bool, true).
 
 ### 4b.2 Grudges (FreeForAll only)
 
-Each sosig is hostile to at most  (int, 3) contestants at a time:
+Each sosig is hostile to at most `RivalCount` (int, 3) contestants at a time:
 
-- After spawn (and on every re-roll) call  then
-   for each rival. IFF -3 (corpses) untouched.
-- Rival pool = living contestants within  metres (float, 40) of the sosig;
-  if fewer than  are in range, take the nearest ones. The player is always in
-  the pool and is picked with weight  (float, 2.0) relative to 1.0 for
+- After spawn (and on every re-roll) call `Priority.SetAllFriendly()` then
+  `Priority.MakeEnemy(iff)` for each rival. IFF -3 (corpses) untouched.
+- Rival pool = living contestants within `RivalRadius` metres (float, 40) of the sosig;
+  if fewer than `RivalCount` are in range, take the nearest ones. The player is always in
+  the pool and is picked with weight `PlayerRivalWeight` (float, 2.0) relative to 1.0 for
   a sosig, so roughly two of eight sosigs want the player at any time.
-- Re-roll every  (Vector2 min/max, 20–40) or when a rival dies.
-- Retaliation: the  postfix calls   when  and differs from the victim's own IFF, so whoever shoots a sosig
-  becomes its rival immediately regardless of template .
+- Re-roll every `RivalRerollSeconds` (min/max, 20–40) or when a rival dies.
+- Retaliation: the `ProcessDamage` postfix calls `victim.Priority.MakeEnemy(d.Source_IFF)`
+  when `Source_IFF >= 0` and differs from the victim's own IFF, so whoever shoots a sosig
+  becomes its rival immediately regardless of template `DoesAggroOnFriendlyFire`.
 - Disabled automatically in Teams/Off modes (team hostility is already the design there).
-Config  (bool, true).
+Config `Grudges` (bool, true).
 
 ### 4b.3 Hunters
 
-Replaces GunGame's waypoint loop for a share of sosigs. Every (Vector2, 10–20) pick  (float, 0.25) sosigs that
+Replaces GunGame's waypoint loop for a share of sosigs. Every `HunterIntervalSeconds`
+(min/max, 10–20) pick `ceil(HunterShare * living enemy sosigs)` (float, 0.25) sosigs that
 are hostile to the player (all in FFA, enemy teams in Teams) and issue
- +  where  = a random point 8–15 m
-from the player's head, sampled on the NavMesh (, fallback: the
+`SetCurrentOrder(Assault)` + `CommandAssaultPoint(p)` where `p` = a random point 8–15 m
+from the player's head, sampled on the NavMesh (`NavMesh.SamplePosition`, fallback: the
 player's position). Non-hunters keep receiving GunGame's random waypoints (its coroutine is
 left running; hunters simply get their order overwritten more often).
-Config  (bool, true), .
+Config `Hunters` (bool, true), `HunterShare`.
 
 ### 4b.4 Skill tiers
 
 Each sosig contestant rolls a tier at round start, kept across respawns:
-Rookie / Regular / Veteran / Elite, weights  (default 30/40/20/10).
-Applied on every spawn to the sosig and to every  it holds or picks up
-(hook  postfix and apply again).
+Rookie / Regular / Veteran / Elite, weights `TierWeights` (default 30/40/20/10).
+Applied on every spawn to the sosig and to every `SosigWeapon` it holds or picks up
+(hook `SosigWeapon.BotPickup` postfix and apply again).
 
 "Rookie sprays" means **misses more, not shoots more**. Nobody gets aimbot.
 
-| Tier | Weapon  × |  × (fires while this far off target) |  × (delay between shots) | Sosig reaction (, ) × |
+| Tier | Weapon `ProjectileSpread` × | `MaxAngularFireRange` × (fires while this far off target) | `Usage_RefireRange` × (delay between shots) | Sosig reaction (`EntityRecognitionSpeedMultiplier`, `CombatTargetIdentificationSpeedMultiplier`) × |
 |---|---|---|---|---|
 | Rookie | 2.5 | 2.0 | 1.3 | 0.6 |
 | Regular | 1.0 | 1.0 | 1.0 | 1.0 |
 | Veteran | 0.7 | 0.8 | 0.9 | 1.3 |
 | Elite | 0.45 | 0.6 | 0.8 | 1.6 |
 
-All multipliers are config entries (). Elite keeps non-zero spread.
-Reaction fields are private copies on ; set via Harmony ; if a field is
+All multipliers are config entries (`Tier.<Name>.<Field>`). Elite keeps non-zero spread.
+Reaction fields are private copies on `Sosig`; set via Harmony `AccessTools`; if a field is
 absent in the current game build, log once and skip it. Tier is shown on the card as 1–4
-small chevrons under the name (config , true). The player has no tier.
-Config  (bool, true).
+small chevrons under the name (config `ShowTierBadge`, true). The player has no tier.
+Config `SkillTiers` (bool, true).
 
 ### Core additions
 
- (weighted pick within radius, player weight),  (share →
-count → random subset),  +  (weighted roll, multiplier table),
- (max-min-distance choice) — all pure and unit-tested.
+`RivalSelector` (weighted pick within radius, player weight), `HunterPicker` (share →
+count → random subset), `SkillTier` + `TierRoller` (weighted roll, multiplier table),
+`SpawnerChooser` (max-min-distance choice) — all pure and unit-tested.
 
 ## 5. Feature: Kill tracking & attribution
 
