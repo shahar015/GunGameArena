@@ -13,6 +13,9 @@ namespace GunGameArena
         public Sosig Sosig;
         public Sprite Portrait;
 
+        /// <summary>Engine-driven "alive": true once the bound sosig is gone or the game itself
+        /// reports it dead. Decides whether the slot is free for the spawner to reuse. This is
+        /// independent of <see cref="Contestant.IsAlive"/>, which is roster-driven.</summary>
         public bool IsVacant
         {
             get { return Sosig == null || Sosig.BodyState == Sosig.SosigBodyState.Dead; }
@@ -127,6 +130,10 @@ namespace GunGameArena
             return null;
         }
 
+        /// <summary>Roster-driven "alive": <see cref="Contestant.IsAlive"/> is set true by
+        /// <see cref="Bind"/> and false here by MarkDead, which the kill tracker's SosigDies prefix
+        /// calls before GunGame spawns the replacement sosig. It can go false slightly ahead of the
+        /// engine-driven <see cref="Slot.IsVacant"/>, so <see cref="LivingSosigSlots"/> requires both.</summary>
         public static void MarkDead(Slot slot)
         {
             slot.Contestant.IsAlive = false;
@@ -165,8 +172,12 @@ namespace GunGameArena
 
         public static void RaiseChanged()
         {
-            try { if (Changed != null) Changed(); }
-            catch (Exception e) { Plugin.Log.LogError("Roster.Changed handler failed: " + e); }
+            if (Changed == null) return;
+            foreach (Delegate d in Changed.GetInvocationList())
+            {
+                try { ((Action)d)(); }
+                catch (Exception e) { Plugin.Log.LogError("Roster.Changed handler failed: " + e); }
+            }
         }
     }
 }
