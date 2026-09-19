@@ -29,6 +29,7 @@ namespace GunGameArena
                 _harmony.PatchAll(typeof(Plugin).Assembly);
                 GunGameHooks.Install();
                 Roster.Install();
+                KillTracker.Install();
                 Log.LogInfo(Name + " " + Version + " loaded. Mode=" + ArenaConfig.Mode.Value
                             + " Leaderboard=" + ArenaConfig.LeaderboardEnabled.Value);
             }
