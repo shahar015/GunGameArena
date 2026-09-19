@@ -123,10 +123,13 @@ namespace GunGameArena.Hud
                     if (Ranking.IsPinnedPlayer(visible, ArenaConfig.TopCount.Value, c)) pinnedCard = _cards[i];
                 }
 
-                // Setting the gap's sibling index to the pinned card's index inserts the gap
-                // immediately before it (the card shifts one slot to the right), after every other card.
+                // Pass 2: gap then pinned card moved to the end in that order → [..., lastTopCard, gap, pinnedCard]
                 _pinGap.gameObject.SetActive(pinnedCard != null);
-                if (pinnedCard != null) _pinGap.transform.SetSiblingIndex(pinnedCard.transform.GetSiblingIndex());
+                if (pinnedCard != null)
+                {
+                    _pinGap.transform.SetAsLastSibling();
+                    pinnedCard.transform.SetAsLastSibling();
+                }
             }
             catch (Exception e) { Plugin.Log.LogError("LeaderboardHud.Rebuild: " + e); }
         }
