@@ -22,25 +22,42 @@ namespace GunGameArena.Behaviour
 
         private static void OnRoundStarted()
         {
-            if (!ArenaConfig.Hunters.Value || Roster.Mode == TeamMode.Off) return;
-            if (_instance == null) _instance = new GameObject("GunGameArena_Hunters").AddComponent<HunterDirector>();
-            _instance.StartCoroutine(_instance.Loop());
+            try
+            {
+                if (!ArenaConfig.Hunters.Value || Roster.Mode == TeamMode.Off) return;
+                if (_instance == null) _instance = new GameObject("GunGameArena_Hunters").AddComponent<HunterDirector>();
+                _instance.StartCoroutine(_instance.Loop());
+            }
+            catch (Exception e) { Plugin.Log.LogError("HunterDirector.OnRoundStarted: " + e); }
         }
 
         private static void OnRoundEnded()
         {
-            if (_instance != null) Destroy(_instance.gameObject);
-            _instance = null;
+            try
+            {
+                if (_instance != null) Destroy(_instance.gameObject);
+                _instance = null;
+            }
+            catch (Exception e) { Plugin.Log.LogError("HunterDirector.OnRoundEnded: " + e); }
         }
 
         private IEnumerator Loop()
         {
             while (Roster.Active)
             {
-                float min = ArenaConfig.HunterIntervalMin.Value, max = Mathf.Max(min, ArenaConfig.HunterIntervalMax.Value);
-                yield return new WaitForSeconds(UnityEngine.Random.Range(min, max));
+                yield return new WaitForSeconds(NextInterval());
                 IssueOrders();
             }
+        }
+
+        private static float NextInterval()
+        {
+            try
+            {
+                float min = ArenaConfig.HunterIntervalMin.Value, max = Mathf.Max(min, ArenaConfig.HunterIntervalMax.Value);
+                return UnityEngine.Random.Range(min, max);
+            }
+            catch (Exception e) { Plugin.Log.LogError("HunterDirector.NextInterval: " + e); return 15f; }
         }
 
         private void IssueOrders()
