@@ -14,7 +14,7 @@
     <Reference Include="BepInEx"><HintPath>$(H3VR_PROFILE_DIR)\core\BepInEx.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="0Harmony"><HintPath>$(H3VR_PROFILE_DIR)\core\0Harmony.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="GunGame"><HintPath>$(H3VR_PROFILE_DIR)\plugins\Kodeman-GunGame\GunGame.dll</HintPath><Private>false</Private></Reference>
-    <Reference Include="Sodalite" Condition="Exists('$(H3VR_PROFILE_DIR)\plugins\nrgill28-Sodalite\plugins\Sodalite.dll')"><HintPath>$(H3VR_PROFILE_DIR)\plugins\nrgill28-Sodalite\plugins\Sodalite.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Sodalite" Condition="Exists('$(H3VR_PROFILE_DIR)\plugins\nrgill28-Sodalite\Sodalite.dll')"><HintPath>$(H3VR_PROFILE_DIR)\plugins\nrgill28-Sodalite\Sodalite.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="Atlas" Condition="Exists('$(H3VR_PROFILE_DIR)\plugins\nrgill28-Atlas\Atlas.dll')"><HintPath>$(H3VR_PROFILE_DIR)\plugins\nrgill28-Atlas\Atlas.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="Assembly-CSharp"><HintPath>$(H3VR_MANAGED)\Assembly-CSharp.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="Assembly-CSharp-firstpass"><HintPath>$(H3VR_MANAGED)\Assembly-CSharp-firstpass.dll</HintPath><Private>false</Private></Reference>
