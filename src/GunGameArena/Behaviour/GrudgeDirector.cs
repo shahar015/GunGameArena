@@ -31,28 +31,44 @@ namespace GunGameArena.Behaviour
 
         private static void OnRoundStarted()
         {
-            if (!Enabled) return;
-            if (_instance == null) _instance = new GameObject("GunGameArena_Grudges").AddComponent<GrudgeDirector>();
-            foreach (var slot in Roster.LivingSosigSlots()) _instance.StartCoroutine(_instance.RerollNextFrame(slot));
+            try
+            {
+                if (!Enabled) return;
+                if (_instance == null) _instance = new GameObject("GunGameArena_Grudges").AddComponent<GrudgeDirector>();
+                foreach (var slot in Roster.LivingSosigSlots()) _instance.StartCoroutine(_instance.RerollNextFrame(slot));
+            }
+            catch (Exception e) { Plugin.Log.LogError("GrudgeDirector.OnRoundStarted: " + e); }
         }
 
         private static void OnRoundEnded()
         {
-            if (_instance != null) Destroy(_instance.gameObject);
-            _instance = null;
+            try
+            {
+                if (_instance != null) Destroy(_instance.gameObject);
+                _instance = null;
+            }
+            catch (Exception e) { Plugin.Log.LogError("GrudgeDirector.OnRoundEnded: " + e); }
         }
 
         private static void OnSosigBound(Slot slot)
         {
-            if (!Enabled || _instance == null) return;
-            _instance.StartCoroutine(_instance.RerollNextFrame(slot));
+            try
+            {
+                if (!Enabled || _instance == null) return;
+                _instance.StartCoroutine(_instance.RerollNextFrame(slot));
+            }
+            catch (Exception e) { Plugin.Log.LogError("GrudgeDirector.OnSosigBound: " + e); }
         }
 
         private static void OnKill(Contestant victim, Contestant killer)
         {
-            if (!Enabled || _instance == null || victim == null) return;
-            foreach (var kv in _instance._rivalIds)
-                if (kv.Value.Contains(victim.Id)) _instance._nextReroll[kv.Key] = 0f;   // re-roll on next Update
+            try
+            {
+                if (!Enabled || _instance == null || victim == null) return;
+                foreach (var kv in _instance._rivalIds)
+                    if (kv.Value.Contains(victim.Id)) _instance._nextReroll[kv.Key] = 0f;   // re-roll on next Update
+            }
+            catch (Exception e) { Plugin.Log.LogError("GrudgeDirector.OnKill: " + e); }
         }
 
         private IEnumerator RerollNextFrame(Slot slot)
@@ -63,10 +79,14 @@ namespace GunGameArena.Behaviour
 
         private void Update()
         {
-            if (!Enabled) return;
-            var due = new List<Slot>();
-            foreach (var kv in _nextReroll) if (Time.time >= kv.Value) due.Add(kv.Key);
-            for (int i = 0; i < due.Count; i++) Reroll(due[i]);
+            try
+            {
+                if (!Enabled) return;
+                var due = new List<Slot>();
+                foreach (var kv in _nextReroll) if (Time.time >= kv.Value) due.Add(kv.Key);
+                for (int i = 0; i < due.Count; i++) Reroll(due[i]);
+            }
+            catch (Exception e) { Plugin.Log.LogError("GrudgeDirector.Update: " + e); }
         }
 
         private void Reroll(Slot slot)
