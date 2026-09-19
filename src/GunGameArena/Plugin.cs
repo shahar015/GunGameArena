@@ -28,6 +28,7 @@ namespace GunGameArena
                 _harmony = new Harmony(Guid);
                 _harmony.PatchAll(typeof(Plugin).Assembly);
                 GunGameHooks.Install();
+                Roster.Install();
                 Log.LogInfo(Name + " " + Version + " loaded. Mode=" + ArenaConfig.Mode.Value
                             + " Leaderboard=" + ArenaConfig.LeaderboardEnabled.Value);
             }
