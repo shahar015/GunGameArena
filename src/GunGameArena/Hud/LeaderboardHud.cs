@@ -37,8 +37,12 @@ namespace GunGameArena.Hud
 
         private static void Hide()
         {
-            if (_instance != null) Destroy(_instance.gameObject);
-            _instance = null;
+            try
+            {
+                if (_instance != null) Destroy(_instance.gameObject);
+                _instance = null;
+            }
+            catch (Exception e) { Plugin.Log.LogError("LeaderboardHud.Hide: " + e); }
         }
 
         private static LeaderboardHud Build()
@@ -102,23 +106,27 @@ namespace GunGameArena.Hud
 
                 while (_cards.Count < visible.Count) _cards.Add(ContestantCard.Create(_row, _font));
 
-                _pinGap.gameObject.SetActive(false);
+                // First lay out every visible card (pushing each to the end of the row in order),
+                // remembering which one (if any) is the pinned player. Only then position the gap
+                // relative to that card's final sibling index — doing it inside the loop races the
+                // later SetAsLastSibling calls and leaves the gap at the front of the row.
+                ContestantCard pinnedCard = null;
                 for (int i = 0; i < _cards.Count; i++)
                 {
                     bool show = i < visible.Count;
                     _cards[i].gameObject.SetActive(show);
                     if (!show) continue;
                     Contestant c = visible[i];
-                    bool pinned = Ranking.IsPinnedPlayer(visible, ArenaConfig.TopCount.Value, c);
-                    if (pinned)
-                    {
-                        _pinGap.gameObject.SetActive(true);
-                        _pinGap.transform.SetSiblingIndex(_cards[i].transform.GetSiblingIndex());
-                    }
                     _cards[i].transform.SetAsLastSibling();
                     _cards[i].Bind(c, PortraitFor(c), crowned.Contains(c.Id), c == rankOne, Roster.Mode,
                                    ArenaConfig.ShowNames.Value, ArenaConfig.ShowTierBadge.Value);
+                    if (Ranking.IsPinnedPlayer(visible, ArenaConfig.TopCount.Value, c)) pinnedCard = _cards[i];
                 }
+
+                // Setting the gap's sibling index to the pinned card's index inserts the gap
+                // immediately before it (the card shifts one slot to the right), after every other card.
+                _pinGap.gameObject.SetActive(pinnedCard != null);
+                if (pinnedCard != null) _pinGap.transform.SetSiblingIndex(pinnedCard.transform.GetSiblingIndex());
             }
             catch (Exception e) { Plugin.Log.LogError("LeaderboardHud.Rebuild: " + e); }
         }
