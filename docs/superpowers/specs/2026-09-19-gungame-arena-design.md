@@ -1,7 +1,7 @@
 # GunGame Arena — Design Spec
 
 Date: 2026-09-19
-Status: approved in discussion, pending written review
+Status: approved 2026-09-20 (incl. §4b behaviour additions and crown rule)
 
 ## 1. Goal
 
@@ -68,12 +68,21 @@ GunGameArena/
       KillAttribution.cs        nearest candidate on a team to a point
       NameGenerator.cs          Roblox-style unique usernames
       HudPalette.cs             team/rank colours as RGBA floats
+      RivalSelector.cs          grudge rival picking (pure)
+      HunterPicker.cs           hunter subset picking (pure)
+      SkillTier.cs              tier enum, TierRoller, multiplier table (pure)
+      SpawnerChooser.cs         max-min-distance spawner choice (pure)
     GunGameArena/               net35 — BepInEx plugin
       Plugin.cs                 BaseUnityPlugin entry, Harmony.PatchAll, wiring
       ArenaConfig.cs            BepInEx ConfigEntry definitions
       Patches/SpawnerPatches.cs prefix/postfix on CustomSosigSpawner.Spawn
       Patches/DamagePatches.cs  postfix Sosig.ProcessDamage, prefix Sosig.SosigDies
       Patches/ProgressionPatches.cs prefix Progression.OnSosigKilledByPlayer
+      Patches/SpawnPlacementPatches.cs prefix SosigBehavior.SpawnSosigRandomPlace
+      Patches/WeaponPatches.cs  postfix SosigWeapon.BotPickup (re-apply tier)
+      Behaviour/GrudgeDirector.cs  rival re-roll coroutine, IFF chart updates
+      Behaviour/HunterDirector.cs  periodic assault orders near the player
+      Behaviour/SkillApplier.cs    applies tier multipliers to sosig + weapons
       Roster.cs                 runtime roster: contestants ↔ live Sosig instances
       KillTracker.cs            last-hit memory per sosig, attribution, player-death hook
       Portraits/PortraitRenderer.cs  camera snapshot of a sosig head → Sprite
@@ -130,6 +139,75 @@ Slot vacancy: a slot is vacant when its sosig reference is null (Unity-destroyed
 
 - Sosigs pick the nearest visible hostile, so they will engage each other and the player. In FFA pressure on the player drops; the config `AllySosigs`/Teams and GunGame's own sosig-count setting are the tuning knobs. No extra "min hostile" knob (YAGNI).
 - GunGame's waypoint loop (random assault points every 12–25 s) is left alone; it keeps everyone roaming into each other.
+
+## 4b. Feature: Match behaviour ("feels like a real FFA")
+
+Problem: GunGame picks a random spawner (skipping the two nearest the player) and sends
+everyone to random waypoints; sosigs shoot the nearest visible hostile. With every sosig
+hostile to every other, they would brawl where they spawn and ignore the player until
+walked into. Four independently switchable behaviours fix this (config section ).
+
+### 4b.1 Spread-out spawns
+
+Harmony prefix on  replaces the random
+pick: among spawners allowed by GunGame's own rule (not the nearest to the player, nor the  farthest), choose the one
+that maximises the minimum distance to every living sosig and to the player; break ties
+randomly. Rest of the method (Spawn + register in ) is re-implemented identically.
+Config  (bool, true).
+
+### 4b.2 Grudges (FreeForAll only)
+
+Each sosig is hostile to at most  (int, 3) contestants at a time:
+
+- After spawn (and on every re-roll) call  then
+   for each rival. IFF -3 (corpses) untouched.
+- Rival pool = living contestants within  metres (float, 40) of the sosig;
+  if fewer than  are in range, take the nearest ones. The player is always in
+  the pool and is picked with weight  (float, 2.0) relative to 1.0 for
+  a sosig, so roughly two of eight sosigs want the player at any time.
+- Re-roll every  (Vector2 min/max, 20–40) or when a rival dies.
+- Retaliation: the  postfix calls   when  and differs from the victim's own IFF, so whoever shoots a sosig
+  becomes its rival immediately regardless of template .
+- Disabled automatically in Teams/Off modes (team hostility is already the design there).
+Config  (bool, true).
+
+### 4b.3 Hunters
+
+Replaces GunGame's waypoint loop for a share of sosigs. Every (Vector2, 10–20) pick  (float, 0.25) sosigs that
+are hostile to the player (all in FFA, enemy teams in Teams) and issue
+ +  where  = a random point 8–15 m
+from the player's head, sampled on the NavMesh (, fallback: the
+player's position). Non-hunters keep receiving GunGame's random waypoints (its coroutine is
+left running; hunters simply get their order overwritten more often).
+Config  (bool, true), .
+
+### 4b.4 Skill tiers
+
+Each sosig contestant rolls a tier at round start, kept across respawns:
+Rookie / Regular / Veteran / Elite, weights  (default 30/40/20/10).
+Applied on every spawn to the sosig and to every  it holds or picks up
+(hook  postfix and apply again).
+
+"Rookie sprays" means **misses more, not shoots more**. Nobody gets aimbot.
+
+| Tier | Weapon  × |  × (fires while this far off target) |  × (delay between shots) | Sosig reaction (, ) × |
+|---|---|---|---|---|
+| Rookie | 2.5 | 2.0 | 1.3 | 0.6 |
+| Regular | 1.0 | 1.0 | 1.0 | 1.0 |
+| Veteran | 0.7 | 0.8 | 0.9 | 1.3 |
+| Elite | 0.45 | 0.6 | 0.8 | 1.6 |
+
+All multipliers are config entries (). Elite keeps non-zero spread.
+Reaction fields are private copies on ; set via Harmony ; if a field is
+absent in the current game build, log once and skip it. Tier is shown on the card as 1–4
+small chevrons under the name (config , true). The player has no tier.
+Config  (bool, true).
+
+### Core additions
+
+ (weighted pick within radius, player weight),  (share →
+count → random subset),  +  (weighted roll, multiplier table),
+ (max-min-distance choice) — all pure and unit-tested.
 
 ## 5. Feature: Kill tracking & attribution
 
@@ -254,6 +332,10 @@ Unit tests (`tests/GunGameArena.Core.Tests`, xunit, net8.0) on the Core project:
 - `Ranking`: sort order and tie-break; top-N-plus-player pinning both when player is inside and outside top N; crown rules for FFA (one crown, none at 0 kills) and Teams (one per team, none for 0-kill teams).
 - `KillAttribution`: nearest candidate wins; excludes victim; empty candidates → null; negative IFF → null.
 - `HudPalette`: team index → colour, rank-1 gold in FFA.
+- `RivalSelector`: respects radius, always includes player in pool, player weight, never picks self, count cap.
+- `HunterPicker`: ceil(share·n), only player-hostile sosigs, random subset without repeats.
+- `TierRoller`: weights respected over many rolls with seed; multiplier lookup per tier.
+- `SpawnerChooser`: picks max-min-distance spawner, honours ignored-near/far counts.
 
 In-game verification (manual, via Thunderstore profile Default): build copies `GunGameArena.dll` into `BepInEx\plugins\GunGameArena\`; launch H3VR through the mod manager; on Nuketown GunGame confirm in `BepInEx\LogOutput.log`: roster created with N names, IFFs assigned, hits recorded, kills attributed with winner names, HUD created; visually confirm sosigs shooting each other, cards/crowns/colours, and that ally kills in Teams mode do not advance the weapon.
 
