@@ -31,6 +31,7 @@ namespace GunGameArena
                 Roster.Install();
                 KillTracker.Install();
                 Portraits.PortraitRenderer.Install();
+                Hud.LeaderboardHud.Install();
                 Log.LogInfo(Name + " " + Version + " loaded. Mode=" + ArenaConfig.Mode.Value
                             + " Leaderboard=" + ArenaConfig.LeaderboardEnabled.Value);
             }
