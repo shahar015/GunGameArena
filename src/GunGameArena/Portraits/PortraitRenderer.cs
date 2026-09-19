@@ -23,18 +23,24 @@ namespace GunGameArena.Portraits
 
         private static void OnRoundStarted()
         {
-            if (Roster.Player == null) return;
-            Ensure().StartCoroutine(SteamAvatar.Load(sprite =>
+            try
             {
                 if (Roster.Player == null) return;
-                Roster.Player.Portrait = sprite;
-                Roster.RaiseChanged();
-            }));
+                Ensure().StartCoroutine(SteamAvatar.Load(sprite =>
+                {
+                    if (Roster.Player == null) return;
+                    if (Roster.Player.Portrait != null && Roster.Player.Portrait != Sprites.FallbackAvatar && Roster.Player.Portrait.texture != null)
+                        Destroy(Roster.Player.Portrait.texture);
+                    Roster.Player.Portrait = sprite;
+                    Roster.RaiseChanged();
+                }));
+            }
+            catch (Exception e) { Plugin.Log.LogError("PortraitRenderer.OnRoundStarted: " + e); }
         }
 
         public static void Capture(Slot slot)
         {
-            try { Ensure().StartCoroutine(Ensure().CaptureRoutine(slot)); }
+            try { var r = Ensure(); r.StartCoroutine(r.CaptureRoutine(slot)); }
             catch (Exception e) { Plugin.Log.LogError("PortraitRenderer.Capture: " + e); }
         }
 
