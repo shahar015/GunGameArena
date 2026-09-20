@@ -21,6 +21,9 @@ namespace GunGameArena.Core
     {
         public const int MaxAllies = 9;
         public const float HunterStep = 0.05f;
+        public const int PointsStep = 5;
+        public const int MinPoints = 5;
+        public const int MaxPoints = 200;
 
         public static string ModeLabel(TeamMode m)
         {
@@ -68,6 +71,11 @@ namespace GunGameArena.Core
         public static string ToggleLabel(string name, bool on)
         {
             return name + ": " + (on ? "ON" : "OFF");
+        }
+
+        public static int StepPointsToWin(int current, int dir)
+        {
+            return Math.Max(MinPoints, Math.Min(MaxPoints, current + (dir >= 0 ? PointsStep : -PointsStep)));
         }
 
         public static bool TeamRowsEnabled(TeamMode m)

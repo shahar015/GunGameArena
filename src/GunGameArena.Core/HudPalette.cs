@@ -51,6 +51,17 @@ namespace GunGameArena.Core
             }
         }
 
+        public static string TeamName(int teamIndex)
+        {
+            switch (teamIndex)
+            {
+                case 0: return "BLUE";
+                case 1: return "RED";
+                case 2: return "GREEN";
+                default: return "YELLOW";
+            }
+        }
+
         public static Rgba CardBorder(TeamMode mode, int teamIndex, bool isRankOne)
         {
             if (mode == TeamMode.Teams) return TeamColor(teamIndex);
