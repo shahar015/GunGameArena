@@ -14,6 +14,7 @@ namespace GunGameArena
         public static ConfigEntry<int> PointsToWin;
         public static ConfigEntry<bool> FriendlyFire;
         public static ConfigEntry<float> TagRange;
+        public static ConfigEntry<bool> TeamTint;
         // Panel
         public static ConfigEntry<float> PanelScale;
         // Leaderboard
@@ -51,7 +52,8 @@ namespace GunGameArena
 
             PointsToWin = cfg.Bind("Teams", "PointsToWin", 30, new ConfigDescription("Team Deathmatch: team score that ends the round.", new AcceptableValueRange<int>(5, 200)));
             FriendlyFire = cfg.Bind("Teams", "FriendlyFire", false, "Team Deathmatch: when false your shots never damage your own team.");
-            TagRange = cfg.Bind("Teams", "TagRange", 30f, "Team Deathmatch: teammate name tags are hidden beyond this distance (metres).");
+            TagRange = cfg.Bind("Teams", "TagRange", 0f, "Team Deathmatch: hide teammate name tags beyond this distance in metres. 0 = always visible.");
+            TeamTint = cfg.Bind("Teams", "TeamTint", true, "Tint your teammates' bodies blue so you can tell them apart.");
 
             PanelScale = cfg.Bind("Panel", "Scale", 1.0f, new ConfigDescription("Size multiplier for the in-map Arena panel.", new AcceptableValueRange<float>(0.5f, 2f)));
 

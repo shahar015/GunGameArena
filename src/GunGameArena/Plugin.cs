@@ -38,6 +38,7 @@ namespace GunGameArena
                 Panel.PanelInstaller.Install();
                 Behaviour.TeamMatch.Install();
                 Hud.TeamTags.Install();
+                Behaviour.TeamTint.Install();
                 Log.LogInfo(Name + " " + Version + " loaded. Mode=" + ArenaConfig.Mode.Value
                             + " Leaderboard=" + ArenaConfig.LeaderboardEnabled.Value);
             }

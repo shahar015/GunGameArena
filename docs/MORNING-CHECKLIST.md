@@ -47,7 +47,8 @@ Edit the config: `[Arena] Mode = Teams` (keep TeamCount 2, AllySosigs -1). Resta
 - [ ] Shooting a blue sosig does nothing (Friendly fire OFF).
 - [ ] Panel shows Points to win and Friendly fire rows when Mode = Teams.
 - [ ] HUD shows `BLUE TEAM: n` left and `RED TEAM: n` right of the title, subtitle `First team to reach 30 points wins`.
-- [ ] Blue ● name tags float above your teammates, facing you, disappearing beyond 30 m.
+- [ ] Blue ● name tags float above your teammates, facing you, visible at any distance by default (0 = always visible; set `[Teams] TagRange` to a positive metres value to hide them beyond that range).
+- [ ] Teammates' bodies are tinted blue (`TeamTint`) so you can tell them apart from the enemy team at a glance.
 - [ ] When a team reaches the target: `<TEAM> TEAM WINS` banner for 5 s then GunGame's end area; log `TEAM VICTORY`.
 
 ## Session 3 (optional) — zip install test
@@ -78,3 +79,5 @@ All in `shaha.GunGameArena.cfg`:
 | HUD too big / close | `[Leaderboard] Scale`, `Distance`, `Height` |
 | Arena panel too big / small | `[Panel] Scale` 1.0 → 0.5–2.0 |
 | Only the leaderboard, original GunGame combat | `[Arena] Mode = Off` |
+| Hide teammate tags beyond some distance | `[Teams] TagRange` 0 (always visible) → e.g. 60 |
+| Turn off the blue teammate body tint | `[Teams] TeamTint` true → false |

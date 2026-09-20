@@ -17,6 +17,7 @@ namespace GunGameArena.Hud
         private static TeamTags _instance;
         private readonly Dictionary<Slot, Text> _tags = new Dictionary<Slot, Text>();
         private readonly Dictionary<Slot, GameObject> _tagRoots = new Dictionary<Slot, GameObject>();
+        private readonly Dictionary<Slot, Canvas> _tagCanvases = new Dictionary<Slot, Canvas>();
         private Font _font;
         private float _nextDiag;
 
@@ -57,6 +58,7 @@ namespace GunGameArena.Hud
                         if (text != null && text.canvas != null) Destroy(text.canvas.gameObject);
                     _instance._tags.Clear();
                     _instance._tagRoots.Clear();
+                    _instance._tagCanvases.Clear();
                     Destroy(_instance.gameObject);
                 }
                 _instance = null;
@@ -106,6 +108,7 @@ namespace GunGameArena.Hud
             var outline = text.gameObject.AddComponent<Outline>(); outline.effectColor = Color.black; outline.effectDistance = new Vector2(2f, -2f);
             _tags[slot] = text;
             _tagRoots[slot] = go;
+            _tagCanvases[slot] = canvas;
 
             Vector3 anchorPos = (slot.Sosig.Links != null && slot.Sosig.Links.Count > 0 && slot.Sosig.Links[0] != null)
                 ? slot.Sosig.Links[0].transform.position
@@ -127,21 +130,33 @@ namespace GunGameArena.Hud
                     Slot slot = kv.Key; Text text = kv.Value;
                     try
                     {
-                        if (text == null || text.canvas == null) { dead.Add(slot); continue; }
                         GameObject root;
-                        if (!_tagRoots.TryGetValue(slot, out root) || root == null) { dead.Add(slot); continue; }
+                        bool hasRoot = _tagRoots.TryGetValue(slot, out root);
+                        // Do NOT test text.canvas here: a tag hidden via canvas.enabled = false still
+                        // reports text.canvas == null on some Unity versions once disabled, which used
+                        // to make LateUpdate mistake a merely-hidden tag for a dead one and destroy it.
+                        if (text == null || !hasRoot || root == null) { dead.Add(slot); continue; }
                         if (slot.IsVacant || !slot.Contestant.IsAlive) { Destroy(root); dead.Add(slot); continue; }
                         Transform anchor = (slot.Sosig.Links != null && slot.Sosig.Links.Count > 0 && slot.Sosig.Links[0] != null) ? slot.Sosig.Links[0].transform : slot.Sosig.transform;
                         Transform tag = root.transform;
                         tag.position = anchor.position + Vector3.up * HeightAboveHead;
                         Vector3 toHead = head - tag.position; toHead.y = 0f;
                         if (toHead.sqrMagnitude > 0.0001f) tag.rotation = Quaternion.LookRotation(-toHead.normalized, Vector3.up);
-                        bool visible = Vector3.Distance(head, tag.position) <= range;
-                        if (root.activeSelf != visible) root.SetActive(visible);
+                        // Keep the root active at all times; toggle the canvas instead. An inactive
+                        // hierarchy makes Text.canvas return null, which used to trip the dead-tag test
+                        // above and get the tag destroyed the very next frame it went out of range.
+                        bool visible = range <= 0f || Vector3.Distance(head, tag.position) <= range;
+                        Canvas canvas;
+                        if (_tagCanvases.TryGetValue(slot, out canvas) && canvas != null)
+                        {
+                            if (canvas.enabled != visible) canvas.enabled = visible;
+                        }
+                        // else: no canvas reference on record — leave the tag visible rather than risk
+                        // hiding it with no way to bring it back.
                     }
                     catch (Exception e) { Plugin.Log.LogError("TeamTags.LateUpdate (tag " + slot.Contestant.Name + "): " + e); }
                 }
-                for (int i = 0; i < dead.Count; i++) { _tags.Remove(dead[i]); _tagRoots.Remove(dead[i]); }
+                for (int i = 0; i < dead.Count; i++) { _tags.Remove(dead[i]); _tagRoots.Remove(dead[i]); _tagCanvases.Remove(dead[i]); }
 
                 if (Time.time >= _nextDiag)
                 {
@@ -167,7 +182,9 @@ namespace GunGameArena.Hud
                                 string name = firstSlot.Contestant.Name;
                                 float dist = Vector3.Distance(head, firstRoot.transform.position);
                                 float facingDot = Vector3.Dot(firstRoot.transform.forward, (firstRoot.transform.position - head).normalized);
-                                Plugin.Log.LogInfo("TeamTags: " + _tags.Count + " tags; first: " + name + " pos=" + firstRoot.transform.position + " active=" + firstRoot.activeSelf + " dist=" + dist.ToString("0.0") + " facingDot=" + facingDot.ToString("0.00"));
+                                Canvas diagCanvas;
+                                bool visible = !_tagCanvases.TryGetValue(firstSlot, out diagCanvas) || diagCanvas == null || diagCanvas.enabled;
+                                Plugin.Log.LogInfo("TeamTags: " + _tags.Count + " tags; first: " + name + " pos=" + firstRoot.transform.position + " visible=" + visible + " dist=" + dist.ToString("0.0") + " facingDot=" + facingDot.ToString("0.00"));
                             }
                         }
                     }
