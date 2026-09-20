@@ -14,7 +14,7 @@ Map: **NuketownGunGame** (or any GunGame map). Start a round from the panel, pla
 
 - [ ] Log has `GunGame Arena 0.1.0 loaded. Mode=FreeForAll Leaderboard=True` and no `[Error  :GunGame Arena]` lines.
 - [ ] Log has `Roster reset: 8 sosigs, mode FreeForAll…` followed by 8 `slot N:` lines with different names, IFFs 1..8 and a mix of tiers.
-- [ ] Sosigs shoot **each other**, not only you. Log `Spawned … (game IFF n)` lines show different `n` per sosig.
+- [ ] Sosigs shoot **each other**, not only you. Log `Spawned … iffN … (game IFF N)` lines show the same N on both sides of each line.
 - [ ] Initial sosigs are spread around the map rather than clustered.
 - [ ] Some sosigs come looking for you. Log has `Hunters: name, name` every 10–20 s naming about two of eight.
 - [ ] Log has `Grudges <name> -> a, b, c` at round start and every 20–40 s; your Steam name appears in roughly half of them.

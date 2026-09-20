@@ -31,6 +31,12 @@ namespace GunGameArena.Patches
             {
                 if (__state == null || __result.SpawnedSosig == null) return;
                 Roster.Bind(__state, __result.SpawnedSosig);
+                // Sodalite randomises any requested IFF >= 5 (Random.Range(6, 10000)); force ours back.
+                if (Roster.Mode != TeamMode.Off)
+                {
+                    int want = __state.Contestant.Iff;
+                    if (__result.SpawnedSosig.GetIFF() != want) __result.SpawnedSosig.SetIFF(want);
+                }
                 Plugin.Log.LogInfo("Spawned " + __state.Contestant + " as " + __result.SosigType
                                    + " (game IFF " + __result.SpawnedSosig.GetIFF() + ")");
                 if (SosigBound != null) SosigBound(__state);

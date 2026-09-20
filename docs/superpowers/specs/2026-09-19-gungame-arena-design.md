@@ -131,7 +131,7 @@ Roster.Changed            ──────────► LeaderboardHud.Rebui
 
 ### Spawner patch
 
-Harmony **prefix** on `CustomSosigSpawner.Spawn(SosigEnemyID)`: if mode ≠ Off and a round is active, `__instance.IFF = Roster.ClaimVacantSlot().Iff`. **Postfix**: bind `__result.SpawnedSosig` to that slot and request a portrait capture. If no roster exists yet (spawn outside a GunGame round, e.g. debug), leave IFF untouched.
+Harmony **prefix** on `CustomSosigSpawner.Spawn(SosigEnemyID)`: if mode ≠ Off and a round is active, `__instance.IFF = Roster.ClaimVacantSlot().Iff`. **Postfix**: bind `__result.SpawnedSosig` to that slot and request a portrait capture. If no roster exists yet (spawn outside a GunGame round, e.g. debug), leave IFF untouched. Sodalite's `SosigAPI.Spawn` replaces any requested IFF ≥ 5 with `Random.Range(6, 10000)`, so the postfix re-applies the slot IFF with `Sosig.SetIFF` (weapons read the holder's IFF at fire time, so no further fix-up is needed).
 
 Slot vacancy: a slot is vacant when its sosig reference is null (Unity-destroyed), `BodyState == Dead`, or the sosig is no longer in `SosigBehavior.Instance.Sosigs`. This covers all three GunGame despawn paths: death respawn, distance despawn, and `ClearSosigs()` after a tiered-progression player death.
 
