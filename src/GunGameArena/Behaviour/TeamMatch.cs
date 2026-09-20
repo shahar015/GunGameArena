@@ -26,8 +26,10 @@ namespace GunGameArena.Behaviour
 
         // weapon-count lock state
         private static readonly List<FVRPointableButton> _lockedPointables = new List<FVRPointableButton>();
+        private static readonly List<Collider> _lockedColliders = new List<Collider>();
         private static readonly Dictionary<Graphic, Color> _originalColors = new Dictionary<Graphic, Color>();
         private static bool _locked;
+        private static WeaponCountOption _lockedOption;
 
         public static bool IsTeams { get { return Roster.Active && Roster.Mode == TeamMode.Teams; } }
 
@@ -46,7 +48,13 @@ namespace GunGameArena.Behaviour
 
         private static void OnRoundEnded()
         {
-            try { _victoryDeclared = false; _lockedPointables.Clear(); _originalColors.Clear(); _locked = false; if (_runner != null) { UnityEngine.Object.Destroy(_runner.gameObject); _runner = null; } }
+            try
+            {
+                _victoryDeclared = false;
+                _lockedPointables.Clear(); _lockedColliders.Clear(); _originalColors.Clear();
+                _locked = false; _lockedOption = null;
+                if (_runner != null) { UnityEngine.Object.Destroy(_runner.gameObject); _runner = null; }
+            }
             catch (Exception e) { Plugin.Log.LogError("TeamMatch.OnRoundEnded: " + e); }
         }
 
@@ -61,10 +69,25 @@ namespace GunGameArena.Behaviour
                 if (winner < 0) return;
                 _victoryDeclared = true;
                 Plugin.Log.LogInfo("TEAM VICTORY: " + HudPalette.TeamName(winner) + " reached " + ArenaConfig.PointsToWin.Value + " points.");
-                if (TeamWon != null) TeamWon(winner);
-                Runner().StartCoroutine(Runner().EndAfterDelay());
+                // Start the end-of-round timer before notifying listeners, so a slow TeamWon handler can't
+                // delay the round actually ending.
+                var runner = Runner();
+                runner.StartCoroutine(runner.EndAfterDelay());
+                RaiseTeamWon(winner);
             }
             catch (Exception e) { Plugin.Log.LogError("TeamMatch.OnRosterChanged: " + e); }
+        }
+
+        /// <summary>Invokes each TeamWon subscriber independently, same as Roster.RaiseChanged, so one
+        /// misbehaving listener (e.g. the HUD banner) can't stop the others from hearing about the win.</summary>
+        private static void RaiseTeamWon(int winner)
+        {
+            if (TeamWon == null) return;
+            foreach (Delegate d in TeamWon.GetInvocationList())
+            {
+                try { ((Action<int>)d)(winner); }
+                catch (Exception e) { Plugin.Log.LogError("TeamMatch.TeamWon handler failed: " + e); }
+            }
         }
 
         private static TeamMatchRunner Runner()
@@ -77,6 +100,8 @@ namespace GunGameArena.Behaviour
         public static void LoopRotationIfNeeded(Progression progression)
         {
             if (!IsTeams || progression == null || CurrentWeaponIdProp == null) return;
+            var gm = MonoBehaviourSingleton<GameManager>.Instance;
+            if (gm == null || gm.GameEnded) return;
             int poolCount = GameSettings.CurrentPool != null ? GameSettings.CurrentPool.GetWeaponCount() : int.MaxValue;
             int limit = Math.Min(poolCount, WeaponCountOption.WeaponCount);
             if (progression.CurrentWeaponId + 1 >= limit)
@@ -86,7 +111,7 @@ namespace GunGameArena.Behaviour
             }
         }
 
-        /// <summary>Called by the ProcessDamage prefix. True = block this damage.</summary>
+        /// <summary>Called by the SosigLink.Damage prefix. True = block this damage.</summary>
         public static bool ShouldBlockFriendlyFire(Sosig victim, Damage d)
         {
             if (!IsTeams || ArenaConfig.FriendlyFire.Value || d == null || victim == null) return false;
@@ -102,7 +127,9 @@ namespace GunGameArena.Behaviour
                 bool want = ArenaConfig.Mode.Value == TeamMode.Teams;
                 var option = UnityEngine.Object.FindObjectOfType<WeaponCountOption>();
                 if (option == null) return;
-                if (want && !_locked) Lock(option);
+                // _lockedOption != option covers a scene change: the old option (and everything we dimmed
+                // on it) is gone, so _locked would otherwise wrongly latch across scenes and skip the new one.
+                if (want && (!_locked || _lockedOption != option)) Lock(option);
                 else if (!want && _locked) Unlock();
             }
             catch (Exception e) { Plugin.Log.LogError("TeamMatch.ApplyWeaponCountLock: " + e); }
@@ -110,8 +137,9 @@ namespace GunGameArena.Behaviour
 
         private static void Lock(WeaponCountOption option)
         {
-            _lockedPointables.Clear(); _originalColors.Clear();
+            _lockedPointables.Clear(); _lockedColliders.Clear(); _originalColors.Clear();
             var buttons = UnityEngine.Object.FindObjectsOfType<Button>();
+            int matched = 0;
             for (int i = 0; i < buttons.Length; i++)
             {
                 Button b = buttons[i];
@@ -119,10 +147,24 @@ namespace GunGameArena.Behaviour
                 for (int k = 0; k < b.onClick.GetPersistentEventCount(); k++)
                     if ((object)b.onClick.GetPersistentTarget(k) == (object)option) targetsOption = true;
                 if (!targetsOption) continue;
+                matched++;
+                // Disabling the pointable only stops the hover highlight: the hand finds it with a
+                // Physics.Raycast + GetComponent<FVRPointable>(), and GetComponent returns disabled
+                // components too. Disabling the collider(s) is what actually makes the button unreachable.
                 var p = b.GetComponent<FVRPointableButton>();
                 if (p != null && p.enabled) { p.enabled = false; _lockedPointables.Add(p); }
+                var colliders = b.GetComponents<Collider>();
+                for (int c = 0; c < colliders.Length; c++)
+                {
+                    if (colliders[c] != null && colliders[c].enabled) { colliders[c].enabled = false; _lockedColliders.Add(colliders[c]); }
+                }
                 Dim(b.GetComponent<Graphic>());
                 foreach (var g in b.GetComponentsInChildren<Graphic>(true)) Dim(g);
+            }
+            if (matched == 0)
+            {
+                Plugin.Log.LogWarning("Team Deathmatch: no 'Number of weapons' buttons found to lock yet; will retry.");
+                return;   // don't latch _locked/_lockedOption on a no-op so the next call retries
             }
             var counter = CounterTextField != null ? CounterTextField.GetValue(option) as Text : null;
             if (counter != null)
@@ -132,6 +174,7 @@ namespace GunGameArena.Behaviour
                     foreach (var g in counter.transform.parent.GetComponentsInChildren<Graphic>(true)) Dim(g);
             }
             _locked = true;
+            _lockedOption = option;
             Plugin.Log.LogInfo("Team Deathmatch: 'Number of weapons' controls locked (" + _lockedPointables.Count + " buttons).");
         }
 
@@ -145,9 +188,11 @@ namespace GunGameArena.Behaviour
         private static void Unlock()
         {
             for (int i = 0; i < _lockedPointables.Count; i++) if (_lockedPointables[i] != null) _lockedPointables[i].enabled = true;
+            for (int i = 0; i < _lockedColliders.Count; i++) if (_lockedColliders[i] != null) _lockedColliders[i].enabled = true;
             foreach (var kv in _originalColors) if (kv.Key != null) kv.Key.color = kv.Value;
-            _lockedPointables.Clear(); _originalColors.Clear();
+            _lockedPointables.Clear(); _lockedColliders.Clear(); _originalColors.Clear();
             _locked = false;
+            _lockedOption = null;
             Plugin.Log.LogInfo("'Number of weapons' controls restored.");
         }
 
@@ -155,7 +200,10 @@ namespace GunGameArena.Behaviour
         {
             public IEnumerator EndAfterDelay()
             {
-                yield return new WaitForSeconds(EndDelaySeconds);
+                // Unscaled time: the victory banner and end-of-round delay should keep counting down even
+                // if anything (e.g. a pause) has scaled Time.timeScale down.
+                float deadline = Time.unscaledTime + EndDelaySeconds;
+                while (Time.unscaledTime < deadline) yield return null;
                 EndRound();
             }
 
