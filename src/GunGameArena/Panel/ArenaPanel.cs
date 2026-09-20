@@ -10,7 +10,7 @@ namespace GunGameArena.Panel
     public class ArenaPanel : MonoBehaviour
     {
         public const float Width = 620f;
-        public const float Height = 760f;
+        public const float Height = 700f;
         private const float RowH = 52f;
         private const float FirstRowY = -110f;
         private const float BtnH = 34f;
@@ -19,7 +19,7 @@ namespace GunGameArena.Panel
         private Text _teamsLabel, _alliesLabel;
         private Text _leaderboardBtn, _spreadBtn, _grudgesBtn, _huntersBtn, _tiersBtn;
 
-        public static ArenaPanel Build(Transform parentless)
+        public static ArenaPanel Build()
         {
             var go = new GameObject("GunGameArena_Panel", typeof(RectTransform));
             go.layer = 0;
@@ -34,7 +34,8 @@ namespace GunGameArena.Panel
             bgImg.sprite = UiFactory.UiSprite; bgImg.type = Image.Type.Sliced; bgImg.color = UiFactory.PanelBlue; bgImg.raycastTarget = false;
 
             var panel = go.AddComponent<ArenaPanel>();
-            panel.BuildRows();
+            try { panel.BuildRows(); }
+            catch (Exception e) { Plugin.Log.LogError("ArenaPanel.BuildRows: " + e); }
             panel.Refresh();
             return panel;
         }
@@ -74,17 +75,17 @@ namespace GunGameArena.Panel
             UiFactory.MakeButton(p, "SpreadToggle", "", new Vector2(0f, y), new Vector2(420f, BtnH), () => Click(() => { ArenaConfig.SpreadSpawns.Value = !ArenaConfig.SpreadSpawns.Value; }), out _spreadBtn);
             y -= RowH;
             UiFactory.MakeButton(p, "GrudgesToggle", "", new Vector2(0f, y), new Vector2(420f, BtnH), () => Click(() => { ArenaConfig.Grudges.Value = !ArenaConfig.Grudges.Value; }), out _grudgesBtn);
-            y -= 34f;
+            y -= 38f;
             UiFactory.MakeText(p, "GrudgesNote", "(each sosig fights 3 rivals at a time, not everyone — keeps FFA from being one blob)", 17, new Color(1f, 1f, 1f, 0.85f), new Vector2(0f, y), new Vector2(Width - 60f, 40f), TextAnchor.UpperCenter, FontStyle.Italic);
             y -= 40f;
             UiFactory.MakeButton(p, "HuntersToggle", "", new Vector2(0f, y), new Vector2(420f, BtnH), () => Click(() => { ArenaConfig.Hunters.Value = !ArenaConfig.Hunters.Value; }), out _huntersBtn);
-            y -= 34f;
+            y -= 38f;
             UiFactory.MakeText(p, "HuntersNote", "(every 10–20 s a few sosigs are sent toward you — without this an FFA mostly ignores you)", 17, new Color(1f, 1f, 1f, 0.85f), new Vector2(0f, y), new Vector2(Width - 60f, 40f), TextAnchor.UpperCenter, FontStyle.Italic);
             y -= 44f;
             // Hunter pressure
-            UiFactory.MakeText(p, "HunterShareLabel", "Hunter pressure", 26, Color.white, new Vector2(-170f, y), new Vector2(240f, RowH), TextAnchor.MiddleLeft, FontStyle.Normal);
-            UiFactory.MakeButton(p, "HunterSharePrev", "<", new Vector2(20f, y), new Vector2(50f, BtnH), () => Click(() => { ArenaConfig.HunterShare.Value = PanelModel.StepHunterShare(ArenaConfig.HunterShare.Value, -1); }), out dummy);
-            _hunterShareValue = UiFactory.MakeText(p, "HunterShareValue", "", 26, Color.white, new Vector2(130f, y), new Vector2(150f, RowH), TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiFactory.MakeText(p, "HunterShareLabel", "Pressure", 26, Color.white, new Vector2(-200f, y), new Vector2(180f, RowH), TextAnchor.MiddleLeft, FontStyle.Normal);
+            UiFactory.MakeButton(p, "HunterSharePrev", "<", new Vector2(-60f, y), new Vector2(50f, BtnH), () => Click(() => { ArenaConfig.HunterShare.Value = PanelModel.StepHunterShare(ArenaConfig.HunterShare.Value, -1); }), out dummy);
+            _hunterShareValue = UiFactory.MakeText(p, "HunterShareValue", "", 26, Color.white, new Vector2(95f, y), new Vector2(230f, RowH), TextAnchor.MiddleCenter, FontStyle.Bold);
             UiFactory.MakeButton(p, "HunterShareNext", ">", new Vector2(250f, y), new Vector2(50f, BtnH), () => Click(() => { ArenaConfig.HunterShare.Value = PanelModel.StepHunterShare(ArenaConfig.HunterShare.Value, +1); }), out dummy);
             y -= RowH;
             UiFactory.MakeButton(p, "TiersToggle", "", new Vector2(0f, y), new Vector2(420f, BtnH), () => Click(() => { ArenaConfig.SkillTiers.Value = !ArenaConfig.SkillTiers.Value; }), out _tiersBtn);
