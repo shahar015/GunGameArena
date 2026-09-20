@@ -51,6 +51,14 @@ Only needed before publishing to Thunderstore.
 2. Delete the manually copied folder `...\profiles\Default\BepInEx\plugins\GunGameArena\` first (otherwise two copies of the plugin load).
 3. Launch: log shows `GunGame Arena 0.1.0 loaded`.
 
+## Session 4 — In-map Arena panel
+
+- [ ] On any GunGame map a blue **Arena** panel stands to the left of GunGame's "More options" panel, same height. Log: `Arena panel placed beside GunGame's settings panel`.
+- [ ] Laser pointer + trigger works on every button; toggles flip their ON/OFF text; `<`/`>` step values.
+- [ ] Toggling **Leaderboard** mid-round hides/shows the HUD immediately.
+- [ ] Set Mode to Teams; Teams and Allies rows brighten; Start Game → header "Team Deathmatch".
+- [ ] Values persist: quit, relaunch, panel shows what you set (they are in `shaha.GunGameArena.cfg`).
+
 ## Things you can tune without rebuilding
 
 All in `shaha.GunGameArena.cfg`:

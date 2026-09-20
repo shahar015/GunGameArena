@@ -35,6 +35,7 @@ namespace GunGameArena
                 Behaviour.GrudgeDirector.Install();
                 Behaviour.HunterDirector.Install();
                 Behaviour.SkillApplier.Install();
+                Panel.PanelInstaller.Install();
                 Log.LogInfo(Name + " " + Version + " loaded. Mode=" + ArenaConfig.Mode.Value
                             + " Leaderboard=" + ArenaConfig.LeaderboardEnabled.Value);
             }

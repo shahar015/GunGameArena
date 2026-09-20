@@ -45,6 +45,17 @@ namespace GunGameArena.Hud
             catch (Exception e) { Plugin.Log.LogError("LeaderboardHud.Hide: " + e); }
         }
 
+        /// <summary>Panel toggle: hide immediately when disabling; show now if a round is active when enabling.</summary>
+        public static void SetEnabledLive(bool enabled)
+        {
+            try
+            {
+                if (!enabled) { Hide(); return; }
+                if (Roster.Active) Show();
+            }
+            catch (Exception e) { Plugin.Log.LogError("LeaderboardHud.SetEnabledLive: " + e); }
+        }
+
         private static LeaderboardHud Build()
         {
             var go = new GameObject("GunGameArena_HUD", typeof(RectTransform));
