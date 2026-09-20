@@ -13,10 +13,12 @@ namespace GunGameArena.Hud
     {
         private const float HeightAboveHead = 0.35f;
         private const float TagScale = 0.003f;
+        private const float DiagIntervalSeconds = 10f;
         private static TeamTags _instance;
         private readonly Dictionary<Slot, Text> _tags = new Dictionary<Slot, Text>();
         private readonly Dictionary<Slot, GameObject> _tagRoots = new Dictionary<Slot, GameObject>();
         private Font _font;
+        private float _nextDiag;
 
         public static void Install()
         {
@@ -31,7 +33,13 @@ namespace GunGameArena.Hud
             {
                 if (Roster.Mode != TeamMode.Teams) return;
                 if (_instance == null) _instance = new GameObject("GunGameArena_TeamTags").AddComponent<TeamTags>();
-                foreach (var slot in Roster.LivingSosigSlots()) _instance.EnsureTag(slot);
+                int living = 0;
+                foreach (var slot in Roster.LivingSosigSlots())
+                {
+                    living++;
+                    _instance.EnsureTag(slot);
+                }
+                Plugin.Log.LogInfo("TeamTags.OnRoundStarted: " + living + " living slots, " + _instance._tags.Count + " tags created");
             }
             catch (Exception e) { Plugin.Log.LogError("TeamTags.OnRoundStarted: " + e); }
         }
@@ -73,13 +81,24 @@ namespace GunGameArena.Hud
             go.transform.SetParent(transform, true); // worldPositionStays: LateUpdate re-positions it in world space anyway
             var canvas = go.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.WorldSpace;
-            go.GetComponent<RectTransform>().sizeDelta = new Vector2(600f, 80f);
+            canvas.sortingOrder = 100;
+            go.GetComponent<RectTransform>().sizeDelta = new Vector2(700f, 100f);
             go.transform.localScale = Vector3.one * TagScale;
+
+            // Background, created before the Text so the label renders on top of it.
+            var bg = new GameObject("Bg", typeof(RectTransform));
+            bg.transform.SetParent(go.transform, false);
+            var bgRt = (RectTransform)bg.transform;
+            bgRt.anchorMin = Vector2.zero; bgRt.anchorMax = Vector2.one; bgRt.offsetMin = Vector2.zero; bgRt.offsetMax = Vector2.zero;
+            var bgImg = bg.AddComponent<Image>();
+            bgImg.sprite = GunGameArena.Portraits.Sprites.Solid;
+            bgImg.color = new Color(0f, 0f, 0f, 0.55f);
+            bgImg.raycastTarget = false;
 
             var text = new GameObject("Text", typeof(RectTransform)).AddComponent<Text>();
             text.transform.SetParent(go.transform, false);
             var rt = text.rectTransform; rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one; rt.offsetMin = Vector2.zero; rt.offsetMax = Vector2.zero;
-            text.font = _font; text.fontSize = 40; text.fontStyle = FontStyle.Bold; text.alignment = TextAnchor.MiddleCenter;
+            text.font = _font; text.fontSize = 48; text.fontStyle = FontStyle.Bold; text.alignment = TextAnchor.MiddleCenter;
             text.color = Color.white; text.supportRichText = true; text.raycastTarget = false;
             Color blue = ContestantCard.ToColor(HudPalette.TeamColor(0));
             string hex = ColorUtility.ToHtmlStringRGB(blue);
@@ -87,6 +106,11 @@ namespace GunGameArena.Hud
             var outline = text.gameObject.AddComponent<Outline>(); outline.effectColor = Color.black; outline.effectDistance = new Vector2(2f, -2f);
             _tags[slot] = text;
             _tagRoots[slot] = go;
+
+            Vector3 anchorPos = (slot.Sosig.Links != null && slot.Sosig.Links.Count > 0 && slot.Sosig.Links[0] != null)
+                ? slot.Sosig.Links[0].transform.position
+                : slot.Sosig.transform.position;
+            Plugin.Log.LogInfo("TeamTags: tag created for " + slot.Contestant.Name + " at " + anchorPos);
         }
 
         private void LateUpdate()
@@ -118,6 +142,37 @@ namespace GunGameArena.Hud
                     catch (Exception e) { Plugin.Log.LogError("TeamTags.LateUpdate (tag " + slot.Contestant.Name + "): " + e); }
                 }
                 for (int i = 0; i < dead.Count; i++) { _tags.Remove(dead[i]); _tagRoots.Remove(dead[i]); }
+
+                if (Time.time >= _nextDiag)
+                {
+                    _nextDiag = Time.time + DiagIntervalSeconds;
+                    try
+                    {
+                        if (_tags.Count == 0)
+                        {
+                            int livingCount = 0; int team0Count = 0;
+                            foreach (var s in Roster.LivingSosigSlots())
+                            {
+                                livingCount++;
+                                if (s.Contestant.TeamIndex == 0) team0Count++;
+                            }
+                            Plugin.Log.LogInfo("TeamTags: 0 tags (mode=" + Roster.Mode + ", living slots=" + livingCount + ", team0 slots=" + team0Count + ")");
+                        }
+                        else
+                        {
+                            Slot firstSlot = null; GameObject firstRoot = null;
+                            foreach (var kv in _tagRoots) { firstSlot = kv.Key; firstRoot = kv.Value; break; }
+                            if (firstRoot != null && firstSlot != null)
+                            {
+                                string name = firstSlot.Contestant.Name;
+                                float dist = Vector3.Distance(head, firstRoot.transform.position);
+                                float facingDot = Vector3.Dot(firstRoot.transform.forward, (firstRoot.transform.position - head).normalized);
+                                Plugin.Log.LogInfo("TeamTags: " + _tags.Count + " tags; first: " + name + " pos=" + firstRoot.transform.position + " active=" + firstRoot.activeSelf + " dist=" + dist.ToString("0.0") + " facingDot=" + facingDot.ToString("0.00"));
+                            }
+                        }
+                    }
+                    catch (Exception e) { Plugin.Log.LogError("TeamTags.LateUpdate (diag): " + e); }
+                }
             }
             catch (Exception e) { Plugin.Log.LogError("TeamTags.LateUpdate: " + e); }
         }

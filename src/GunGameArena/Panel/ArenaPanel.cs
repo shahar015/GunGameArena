@@ -120,7 +120,11 @@ namespace GunGameArena.Panel
                 _pointsValue.text = ArenaConfig.PointsToWin.Value.ToString();
                 _friendlyFireBtn.text = PanelModel.ToggleLabel("Friendly fire", ArenaConfig.FriendlyFire.Value);
                 float a = PanelModel.TeamRowsEnabled(mode) ? 1f : 0.4f;
-                foreach (var t in new[] { _teamsLabel, _teamsValue, _alliesLabel, _alliesValue, _pointsLabel, _pointsValue, _friendlyFireBtn }) t.color = new Color(1f, 1f, 1f, a);
+                foreach (var t in new[] { _teamsLabel, _teamsValue, _alliesLabel, _alliesValue, _pointsLabel, _pointsValue }) t.color = new Color(1f, 1f, 1f, a);
+                // _friendlyFireBtn's label sits on a white button background (UiFactory.ButtonText is
+                // dark grey); dimming it toward white like the rows above would make it invisible.
+                // Dim via alpha only, keeping the dark text colour.
+                _friendlyFireBtn.color = new Color(UiFactory.ButtonText.r, UiFactory.ButtonText.g, UiFactory.ButtonText.b, a);
                 _leaderboardBtn.text = PanelModel.ToggleLabel("Leaderboard", ArenaConfig.LeaderboardEnabled.Value);
                 _spreadBtn.text = PanelModel.ToggleLabel("Spread spawns", ArenaConfig.SpreadSpawns.Value);
                 _grudgesBtn.text = PanelModel.ToggleLabel("Grudges", ArenaConfig.Grudges.Value);
