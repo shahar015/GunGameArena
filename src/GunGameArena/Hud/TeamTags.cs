@@ -15,6 +15,7 @@ namespace GunGameArena.Hud
         private const float TagScale = 0.003f;
         private static TeamTags _instance;
         private readonly Dictionary<Slot, Text> _tags = new Dictionary<Slot, Text>();
+        private readonly Dictionary<Slot, GameObject> _tagRoots = new Dictionary<Slot, GameObject>();
         private Font _font;
 
         public static void Install()
@@ -37,7 +38,21 @@ namespace GunGameArena.Hud
 
         private static void OnRoundEnded()
         {
-            try { if (_instance != null) Destroy(_instance.gameObject); _instance = null; }
+            try
+            {
+                if (_instance != null)
+                {
+                    // Belt and braces: tags are parented under the instance so destroying it should
+                    // take them with it, but explicitly destroy each tag's canvas first in case a
+                    // tag was ever left unparented (e.g. by future code that changes EnsureTag).
+                    foreach (var text in _instance._tags.Values)
+                        if (text != null && text.canvas != null) Destroy(text.canvas.gameObject);
+                    _instance._tags.Clear();
+                    _instance._tagRoots.Clear();
+                    Destroy(_instance.gameObject);
+                }
+                _instance = null;
+            }
             catch (Exception e) { Plugin.Log.LogError("TeamTags.OnRoundEnded: " + e); }
         }
 
@@ -55,6 +70,7 @@ namespace GunGameArena.Hud
             if (_font == null) _font = Resources.GetBuiltinResource<Font>("Arial.ttf");
 
             var go = new GameObject("TeamTag_" + slot.Contestant.Name, typeof(RectTransform));
+            go.transform.SetParent(transform, true); // worldPositionStays: LateUpdate re-positions it in world space anyway
             var canvas = go.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.WorldSpace;
             go.GetComponent<RectTransform>().sizeDelta = new Vector2(600f, 80f);
@@ -70,6 +86,7 @@ namespace GunGameArena.Hud
             text.text = "<color=#" + hex + ">●</color> " + slot.Contestant.Name;
             var outline = text.gameObject.AddComponent<Outline>(); outline.effectColor = Color.black; outline.effectDistance = new Vector2(2f, -2f);
             _tags[slot] = text;
+            _tagRoots[slot] = go;
         }
 
         private void LateUpdate()
@@ -84,17 +101,23 @@ namespace GunGameArena.Hud
                 foreach (var kv in _tags)
                 {
                     Slot slot = kv.Key; Text text = kv.Value;
-                    if (text == null) { dead.Add(slot); continue; }
-                    if (slot.IsVacant || !slot.Contestant.IsAlive) { Destroy(text.canvas.gameObject); dead.Add(slot); continue; }
-                    Transform anchor = (slot.Sosig.Links != null && slot.Sosig.Links.Count > 0 && slot.Sosig.Links[0] != null) ? slot.Sosig.Links[0].transform : slot.Sosig.transform;
-                    Transform tag = text.canvas.transform;
-                    tag.position = anchor.position + Vector3.up * HeightAboveHead;
-                    Vector3 toHead = head - tag.position; toHead.y = 0f;
-                    if (toHead.sqrMagnitude > 0.0001f) tag.rotation = Quaternion.LookRotation(-toHead.normalized, Vector3.up);
-                    bool visible = Vector3.Distance(head, tag.position) <= range;
-                    if (text.canvas.enabled != visible) text.canvas.enabled = visible;
+                    try
+                    {
+                        if (text == null || text.canvas == null) { dead.Add(slot); continue; }
+                        GameObject root;
+                        if (!_tagRoots.TryGetValue(slot, out root) || root == null) { dead.Add(slot); continue; }
+                        if (slot.IsVacant || !slot.Contestant.IsAlive) { Destroy(root); dead.Add(slot); continue; }
+                        Transform anchor = (slot.Sosig.Links != null && slot.Sosig.Links.Count > 0 && slot.Sosig.Links[0] != null) ? slot.Sosig.Links[0].transform : slot.Sosig.transform;
+                        Transform tag = root.transform;
+                        tag.position = anchor.position + Vector3.up * HeightAboveHead;
+                        Vector3 toHead = head - tag.position; toHead.y = 0f;
+                        if (toHead.sqrMagnitude > 0.0001f) tag.rotation = Quaternion.LookRotation(-toHead.normalized, Vector3.up);
+                        bool visible = Vector3.Distance(head, tag.position) <= range;
+                        if (root.activeSelf != visible) root.SetActive(visible);
+                    }
+                    catch (Exception e) { Plugin.Log.LogError("TeamTags.LateUpdate (tag " + slot.Contestant.Name + "): " + e); }
                 }
-                for (int i = 0; i < dead.Count; i++) _tags.Remove(dead[i]);
+                for (int i = 0; i < dead.Count; i++) { _tags.Remove(dead[i]); _tagRoots.Remove(dead[i]); }
             }
             catch (Exception e) { Plugin.Log.LogError("TeamTags.LateUpdate: " + e); }
         }
