@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using GunGameArena.Core;
 using UnityEngine;
@@ -12,6 +13,7 @@ namespace GunGameArena.Hud
 
         private Font _font;
         private Text _header;
+        private Text _leftScore, _rightScore, _subtitle, _banner;
         private RectTransform _row;
         private LayoutElement _pinGap;
         private readonly List<ContestantCard> _cards = new List<ContestantCard>();
@@ -20,6 +22,33 @@ namespace GunGameArena.Hud
         {
             GunGameHooks.RoundStarted += Show;
             GunGameHooks.RoundEnded += Hide;
+            Behaviour.TeamMatch.TeamWon += OnTeamWon;
+        }
+
+        private static void OnTeamWon(int team)
+        {
+            try { ShowBanner(HudPalette.TeamName(team) + " TEAM WINS", ContestantCard.ToColor(HudPalette.TeamColor(team)), 5f); }
+            catch (Exception e) { Plugin.Log.LogError("LeaderboardHud.OnTeamWon: " + e); }
+        }
+
+        /// <summary>Shows the victory banner for a few seconds. No-op if the HUD isn't up.</summary>
+        public static void ShowBanner(string text, Color color, float seconds)
+        {
+            try
+            {
+                if (_instance == null) return;
+                _instance._banner.text = text;
+                _instance._banner.color = color;
+                _instance._banner.gameObject.SetActive(true);
+                _instance.StartCoroutine(_instance.HideBannerAfter(seconds));
+            }
+            catch (Exception e) { Plugin.Log.LogError("LeaderboardHud.ShowBanner: " + e); }
+        }
+
+        private IEnumerator HideBannerAfter(float seconds)
+        {
+            yield return new WaitForSeconds(seconds);
+            if (_banner != null) _banner.gameObject.SetActive(false);
         }
 
         private static void Show()
@@ -91,11 +120,57 @@ namespace GunGameArena.Hud
             headerText.alignment = TextAnchor.MiddleCenter; headerText.color = Color.white; headerText.raycastTarget = false;
             hud._header = headerText;
 
+            // Team scores (left/right of the header)
+            var leftScoreGo = new GameObject("LeftScore", typeof(RectTransform));
+            leftScoreGo.transform.SetParent(go.transform, false);
+            var leftScoreRt = leftScoreGo.GetComponent<RectTransform>();
+            leftScoreRt.anchorMin = new Vector2(0.5f, 1f); leftScoreRt.anchorMax = new Vector2(0.5f, 1f);
+            leftScoreRt.sizeDelta = new Vector2(300f, 44f); leftScoreRt.anchoredPosition = new Vector2(-330f, -22f);
+            var leftScoreText = leftScoreGo.AddComponent<Text>();
+            leftScoreText.font = hud._font; leftScoreText.fontSize = 26; leftScoreText.fontStyle = FontStyle.Bold;
+            leftScoreText.alignment = TextAnchor.MiddleRight; leftScoreText.color = Color.white; leftScoreText.raycastTarget = false;
+            hud._leftScore = leftScoreText;
+
+            var rightScoreGo = new GameObject("RightScore", typeof(RectTransform));
+            rightScoreGo.transform.SetParent(go.transform, false);
+            var rightScoreRt = rightScoreGo.GetComponent<RectTransform>();
+            rightScoreRt.anchorMin = new Vector2(0.5f, 1f); rightScoreRt.anchorMax = new Vector2(0.5f, 1f);
+            rightScoreRt.sizeDelta = new Vector2(300f, 44f); rightScoreRt.anchoredPosition = new Vector2(330f, -22f);
+            var rightScoreText = rightScoreGo.AddComponent<Text>();
+            rightScoreText.font = hud._font; rightScoreText.fontSize = 26; rightScoreText.fontStyle = FontStyle.Bold;
+            rightScoreText.alignment = TextAnchor.MiddleLeft; rightScoreText.color = Color.white; rightScoreText.raycastTarget = false;
+            hud._rightScore = rightScoreText;
+
+            // Subtitle
+            var subtitleGo = new GameObject("Subtitle", typeof(RectTransform));
+            subtitleGo.transform.SetParent(go.transform, false);
+            var subtitleRt = subtitleGo.GetComponent<RectTransform>();
+            subtitleRt.anchorMin = new Vector2(0.5f, 1f); subtitleRt.anchorMax = new Vector2(0.5f, 1f);
+            subtitleRt.sizeDelta = new Vector2(600f, 30f); subtitleRt.anchoredPosition = new Vector2(0f, -60f);
+            var subtitleText = subtitleGo.AddComponent<Text>();
+            subtitleText.font = hud._font; subtitleText.fontSize = 18; subtitleText.fontStyle = FontStyle.Normal;
+            subtitleText.alignment = TextAnchor.MiddleCenter; subtitleText.color = new Color(1f, 1f, 1f, 0.85f); subtitleText.raycastTarget = false;
+            hud._subtitle = subtitleText;
+
+            // Victory banner (hidden until ShowBanner is called)
+            var bannerGo = new GameObject("Banner", typeof(RectTransform));
+            bannerGo.transform.SetParent(go.transform, false);
+            var bannerRt = bannerGo.GetComponent<RectTransform>();
+            bannerRt.anchorMin = new Vector2(0.5f, 1f); bannerRt.anchorMax = new Vector2(0.5f, 1f);
+            bannerRt.sizeDelta = new Vector2(900f, 90f); bannerRt.anchoredPosition = new Vector2(0f, -420f);
+            var bannerText = bannerGo.AddComponent<Text>();
+            bannerText.font = hud._font; bannerText.fontSize = 64; bannerText.fontStyle = FontStyle.Bold;
+            bannerText.alignment = TextAnchor.MiddleCenter; bannerText.color = Color.white; bannerText.raycastTarget = false;
+            var bannerOutline = bannerGo.AddComponent<Outline>();
+            bannerOutline.effectColor = Color.black; bannerOutline.effectDistance = new Vector2(3f, -3f);
+            hud._banner = bannerText;
+            bannerGo.SetActive(false);
+
             // Card row
             var row = new GameObject("Row", typeof(RectTransform)).GetComponent<RectTransform>();
             row.SetParent(go.transform, false);
             row.anchorMin = new Vector2(0.5f, 1f); row.anchorMax = new Vector2(0.5f, 1f);
-            row.sizeDelta = new Vector2(1000f, 180f); row.anchoredPosition = new Vector2(0f, -150f);
+            row.sizeDelta = new Vector2(1000f, 180f); row.anchoredPosition = new Vector2(0f, -170f);
             var layout = row.gameObject.AddComponent<HorizontalLayoutGroup>();
             layout.spacing = 6f; layout.childAlignment = TextAnchor.UpperCenter;
             layout.childForceExpandWidth = false; layout.childForceExpandHeight = false;
@@ -122,6 +197,30 @@ namespace GunGameArena.Hud
                 Contestant rankOne = sorted.Count > 0 ? sorted[0] : null;
 
                 _header.text = ModeTitle(Roster.Mode);
+
+                bool teams = Roster.Mode == TeamMode.Teams;
+                _leftScore.gameObject.SetActive(teams);
+                _rightScore.gameObject.SetActive(teams);
+                _subtitle.gameObject.SetActive(teams);
+                if (teams)
+                {
+                    var all = new List<Contestant>(Roster.AllContestants);
+
+                    _leftScore.text = "BLUE TEAM: " + TeamScore.Total(all, 0);
+                    _leftScore.color = ContestantCard.ToColor(HudPalette.TeamColor(0));
+
+                    int teamCount = TeamAssigner.ClampTeamCount(ArenaConfig.TeamCount.Value);
+                    string right = "";
+                    for (int t = 1; t < teamCount; t++)
+                    {
+                        if (t > 1) right += " · ";
+                        right += HudPalette.TeamName(t) + " TEAM: " + TeamScore.Total(all, t);
+                    }
+                    _rightScore.text = right;
+                    _rightScore.color = ContestantCard.ToColor(HudPalette.TeamColor(1));
+
+                    _subtitle.text = "First team to reach " + ArenaConfig.PointsToWin.Value + " points wins";
+                }
 
                 while (_cards.Count < visible.Count) _cards.Add(ContestantCard.Create(_row, _font));
 

@@ -46,6 +46,9 @@ Edit the config: `[Arena] Mode = Teams` (keep TeamCount 2, AllySosigs -1). Resta
 - [ ] Reaching the last weapon loops back to the first (`weapon rotation looped`).
 - [ ] Shooting a blue sosig does nothing (Friendly fire OFF).
 - [ ] Panel shows Points to win and Friendly fire rows when Mode = Teams.
+- [ ] HUD shows `BLUE TEAM: n` left and `RED TEAM: n` right of the title, subtitle `First team to reach 30 points wins`.
+- [ ] Blue ● name tags float above your teammates, facing you, disappearing beyond 30 m.
+- [ ] When a team reaches the target: `<TEAM> TEAM WINS` banner for 5 s then GunGame's end area; log `TEAM VICTORY`.
 
 ## Session 3 (optional) — zip install test
 
