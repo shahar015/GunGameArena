@@ -14,7 +14,7 @@ namespace GunGameArena.Patches
         {
             try
             {
-                if (!ArenaConfig.SkillTiers.Value || !Roster.Active) return;
+                if (!Roster.Active || !ArenaConfig.SkillTiers.Value) return;
                 Slot slot = Roster.FindBySosig(S);
                 if (slot != null) SkillApplier.ApplyWeapon(__instance, slot.Contestant.Tier);
             }

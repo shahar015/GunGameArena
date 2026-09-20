@@ -71,4 +71,22 @@ public class TeamAssignerTests
         Assert.Equal(4, TeamAssigner.ClampTeamCount(9));
         Assert.Equal(3, TeamAssigner.ClampTeamCount(3));
     }
+
+    [Fact]
+    public void FreeForAll_never_hands_a_sosig_the_player_iff()
+    {
+        for (int slot = 0; slot < 8; slot++)
+        {
+            int team = TeamAssigner.TeamIndexFor(TeamMode.FreeForAll, slot, 8, 2, -1);
+            Assert.NotEqual(3, TeamAssigner.IffFor(TeamMode.FreeForAll, team, 3));
+        }
+    }
+
+    [Fact]
+    public void Teams_enemy_team_never_shares_the_player_iff()
+    {
+        Assert.Equal(2, TeamAssigner.IffFor(TeamMode.Teams, 0, 2));
+        Assert.NotEqual(2, TeamAssigner.IffFor(TeamMode.Teams, 2, 2));
+        Assert.Equal(1, TeamAssigner.IffFor(TeamMode.Teams, 1, 2));
+    }
 }

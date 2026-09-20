@@ -15,6 +15,7 @@ namespace GunGameArena.Behaviour
 
         private readonly Dictionary<Slot, float> _nextReroll = new Dictionary<Slot, float>();
         private readonly Dictionary<Slot, List<int>> _rivalIds = new Dictionary<Slot, List<int>>();
+        private readonly Dictionary<Slot, List<int>> _stickyIffs = new Dictionary<Slot, List<int>>();
 
         private static bool Enabled
         {
@@ -27,6 +28,7 @@ namespace GunGameArena.Behaviour
             GunGameHooks.RoundEnded += OnRoundEnded;
             SpawnerPatches.SosigBound += OnSosigBound;
             KillTracker.KillRegistered += OnKill;
+            KillTracker.RetaliationTriggered += OnRetaliation;
         }
 
         private static void OnRoundStarted()
@@ -71,6 +73,18 @@ namespace GunGameArena.Behaviour
             catch (Exception e) { Plugin.Log.LogError("GrudgeDirector.OnKill: " + e); }
         }
 
+        private static void OnRetaliation(Slot slot, int attackerIff)
+        {
+            try
+            {
+                if (!Enabled || _instance == null || slot == null) return;
+                List<int> list;
+                if (!_instance._stickyIffs.TryGetValue(slot, out list)) { list = new List<int>(); _instance._stickyIffs[slot] = list; }
+                if (!list.Contains(attackerIff)) list.Add(attackerIff);
+            }
+            catch (Exception e) { Plugin.Log.LogError("GrudgeDirector.OnRetaliation: " + e); }
+        }
+
         private IEnumerator RerollNextFrame(Slot slot)
         {
             yield return null;   // Priority system is initialised in Sosig.Start / Configure
@@ -93,7 +107,7 @@ namespace GunGameArena.Behaviour
         {
             try
             {
-                if (slot == null || slot.IsVacant || slot.Sosig.Priority == null) { _nextReroll.Remove(slot); _rivalIds.Remove(slot); return; }
+                if (slot == null || slot.IsVacant || slot.Sosig.Priority == null) { _nextReroll.Remove(slot); _rivalIds.Remove(slot); _stickyIffs.Remove(slot); return; }
                 Roster.UpdatePositions();
                 var rivals = RivalSelector.Pick(Rng, slot.Contestant, Roster.AllContestants,
                     ArenaConfig.RivalCount.Value, ArenaConfig.RivalRadius.Value, ArenaConfig.PlayerRivalWeight.Value);
@@ -106,6 +120,14 @@ namespace GunGameArena.Behaviour
                     slot.Sosig.Priority.MakeEnemy(rivals[i].Iff);
                     ids.Add(rivals[i].Id);
                     names.Add(rivals[i].Name);
+                }
+
+                List<int> sticky;
+                if (_stickyIffs.TryGetValue(slot, out sticky))
+                {
+                    for (int i = 0; i < sticky.Count; i++) slot.Sosig.Priority.MakeEnemy(sticky[i]);   // survives exactly one re-roll
+                    names.Add("+" + sticky.Count + " grudge");
+                    _stickyIffs.Remove(slot);
                 }
                 _rivalIds[slot] = ids;
                 float min = ArenaConfig.RivalRerollMin.Value, max = Mathf.Max(min, ArenaConfig.RivalRerollMax.Value);

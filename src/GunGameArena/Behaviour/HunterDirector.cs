@@ -26,6 +26,7 @@ namespace GunGameArena.Behaviour
             {
                 if (!ArenaConfig.Hunters.Value || Roster.Mode == TeamMode.Off) return;
                 if (_instance == null) _instance = new GameObject("GunGameArena_Hunters").AddComponent<HunterDirector>();
+                _instance.StopAllCoroutines();
                 _instance.StartCoroutine(_instance.Loop());
             }
             catch (Exception e) { Plugin.Log.LogError("HunterDirector.OnRoundStarted: " + e); }
@@ -83,6 +84,8 @@ namespace GunGameArena.Behaviour
                     if (s == null) continue;
                     Vector3 target = PointNear(playerPos);
                     s.SetCurrentOrder(Sosig.SosigOrder.Assault);
+                    if (Roster.Mode == TeamMode.FreeForAll && ArenaConfig.Grudges.Value && s.Priority != null)
+                        s.Priority.MakeEnemy(Roster.PlayerIff);   // a hunter must actually engage the player
                     s.CommandAssaultPoint(target);
                     names.Add(hunters[i].Name);
                 }

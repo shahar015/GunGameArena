@@ -44,9 +44,18 @@ namespace GunGameArena.Core
             switch (mode)
             {
                 case TeamMode.FreeForAll:
-                    return Math.Min(Math.Max(1, teamIndex), MaxIff);
+                {
+                    int iff = Math.Min(Math.Max(1, teamIndex), MaxIff);
+                    if (iff == playerIff) iff = iff < MaxIff ? iff + 1 : MaxIff - 1;
+                    return iff;
+                }
                 case TeamMode.Teams:
-                    return teamIndex == 0 ? playerIff : teamIndex;
+                {
+                    if (teamIndex == 0) return playerIff;
+                    int iff = teamIndex;
+                    if (iff == playerIff) iff = MaxIff;
+                    return iff;
+                }
                 default:
                     return OriginalGunGameIff;
             }

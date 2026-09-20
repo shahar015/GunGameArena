@@ -17,7 +17,10 @@ Map: **NuketownGunGame** (or any GunGame map). Start a round from the panel, pla
 - [ ] Sosigs shoot **each other**, not only you. Log `Spawned … (game IFF n)` lines show different `n` per sosig.
 - [ ] Initial sosigs are spread around the map rather than clustered.
 - [ ] Some sosigs come looking for you. Log has `Hunters: name, name` every 10–20 s naming about two of eight.
-- [ ] Log has `Grudges <name> -> a, b, c` at round start and every 20–40 s; your Steam name appears in roughly a quarter of them.
+- [ ] Log has `Grudges <name> -> a, b, c` at round start and every 20–40 s; your Steam name appears in roughly half of them.
+- [ ] **No** `Blocked progression credit` lines appear in FFA (they belong to Teams mode only).
+- [ ] Restart the round from the in-map panel without changing map: `Hunters:` lines keep the same 10–20 s cadence (no doubling).
+- [ ] After you shoot a sosig that wasn't hunting you, it keeps fighting you for at least the next grudge re-roll (log line ends with `+1 grudge`).
 - [ ] A sosig you shoot turns on you immediately, even if it wasn't hunting you.
 - [ ] Kill credit: `KILL <sosig> -> <sosig>` for sosig-on-sosig, `KILL <YourSteamName> -> <sosig>` for yours, `KILL <sosig> -> <YourSteamName> (player…)` when you die.
 - [ ] Your weapon advances **only** on your own kills.

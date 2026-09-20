@@ -7,9 +7,9 @@ namespace GunGameArena.Portraits
     {
         private static Sprite _crown, _fallback, _solid;
 
-        public static Sprite Solid { get { return _solid ?? (_solid = MakeSolid()); } }
-        public static Sprite Crown { get { return _crown ?? (_crown = MakeCrown()); } }
-        public static Sprite FallbackAvatar { get { return _fallback ?? (_fallback = MakeFallbackAvatar()); } }
+        public static Sprite Solid { get { if (_solid == null) _solid = MakeSolid(); return _solid; } }
+        public static Sprite Crown { get { if (_crown == null) _crown = MakeCrown(); return _crown; } }
+        public static Sprite FallbackAvatar { get { if (_fallback == null) _fallback = MakeFallbackAvatar(); return _fallback; } }
 
         public static Sprite FromTexture(Texture2D tex)
         {

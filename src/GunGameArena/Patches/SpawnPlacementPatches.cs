@@ -20,7 +20,7 @@ namespace GunGameArena.Patches
         {
             try
             {
-                if (!ArenaConfig.SpreadSpawns.Value || !Roster.Active) return true;
+                if (!Roster.Active || !ArenaConfig.SpreadSpawns.Value) return true;
                 var spawners = __instance.SosigSpawners;
                 if (spawners == null || spawners.Count == 0 || GM.CurrentPlayerBody == null) return true;
 

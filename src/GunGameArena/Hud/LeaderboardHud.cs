@@ -55,6 +55,14 @@ namespace GunGameArena.Hud
             go.transform.localScale = Vector3.one * 0.001f * ArenaConfig.Scale.Value;
             go.AddComponent<HudFollower>();
 
+            var body = FistVR.GM.CurrentPlayerBody;
+            if (body != null && body.Head != null)
+            {
+                float yaw = body.Head.rotation.eulerAngles.y;
+                go.transform.position = body.Head.position + Quaternion.Euler(0f, yaw, 0f) * Vector3.forward * ArenaConfig.Distance.Value + Vector3.up * ArenaConfig.Height.Value;
+                go.transform.rotation = Quaternion.Euler(-10f, yaw, 0f);
+            }
+
             var hud = go.AddComponent<LeaderboardHud>();
             hud._font = Resources.GetBuiltinResource<Font>("Arial.ttf");
 

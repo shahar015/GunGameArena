@@ -55,7 +55,16 @@ namespace GunGameArena
 
         private static void OnRoundStarting()
         {
-            int playerIff = GM.CurrentPlayerBody != null ? GM.CurrentPlayerBody.GetPlayerIFF() : 0;
+            int playerIff;
+            if (GM.CurrentPlayerBody != null)
+            {
+                playerIff = GM.CurrentPlayerBody.GetPlayerIFF();
+            }
+            else
+            {
+                Plugin.Log.LogWarning("Player body missing at round start; assuming player IFF 0.");
+                playerIff = 0;
+            }
             Reset(GameSettings.MaxSosigCount, ArenaConfig.Mode.Value, playerIff);
         }
 
@@ -69,6 +78,8 @@ namespace GunGameArena
 
         public static void Reset(int sosigCount, TeamMode mode, int playerIff)
         {
+            if (sosigCount > TeamAssigner.MaxIff)
+                Plugin.Log.LogWarning("Sosig count " + sosigCount + " exceeds " + TeamAssigner.MaxIff + " IFFs; some sosigs will share an IFF (spec §4).");
             Mode = mode;
             PlayerIff = playerIff;
             _nextId = 1;

@@ -28,7 +28,7 @@ settings UI (config file only).
 | Managed DLLs | `h3vr_Data\Managed\` — `Assembly-CSharp.dll`, `Assembly-CSharp-firstpass.dll` (contains `Steamworks.*`), `UnityEngine.dll` (Unity 5.x monolithic), `UnityEngine.UI.dll` |
 | Mod manager | Thunderstore Mod Manager, profile **Default**: `%APPDATA%\Thunderstore Mod Manager\DataFolder\H3VR\profiles\Default\BepInEx\` |
 | BepInEx | 5.4.1700 (`core\BepInEx.dll`, `core\0Harmony.dll`) |
-| GunGame DLL | `plugins\Kodeman-GunGame\GunGame.dll` (1.0.2, net35, references Sodalite, Atlas) |
+| GunGame DLL | `plugins\Kodeman-GunGame\GunGame.dll` (1.0.2, net35, references Sodalite, Atlas) — Thunderstore package 1.0.2 ships a plugin whose BepInPlugin version is 1.0.4; the manifest depends on the package version, the code on the plugin version. |
 | .NET SDK | 10.0.201 (`dotnet`) |
 | Target framework | `net35` (BepInEx 5 / Unity 5.6 mono) |
 
@@ -241,7 +241,7 @@ Subscribe to `GM.CurrentSceneSettings.PlayerDeathFromIFFEvent` on round start (u
 `Roster.Reset(count, mode)` on `GameManager.BeforeGameStartedEvent`:
 
 - Creates `count = GameSettings.MaxSosigCount` sosig contestants with unique generated names, team index and IFF from `TeamAssigner`, kills 0, no sosig bound.
-- Creates the player contestant: name = `SteamFriends.GetPersonaName()` when `SteamManager.Initialized`, else `"You"`; team 0; IFF = player IFF; portrait from `SteamAvatar`.
+- Creates the player contestant: name = `GM.PlayerName` (which the game primes from `SteamFriends.GetPersonaName()`), fallback "You"; team 0; IFF = player IFF; portrait from `SteamAvatar`.
 - Contestants persist for the whole round; a replacement sosig inherits the dead one's slot, name, team and kills (respawn semantics). Portrait is re-captured on each respawn because the sosig type may change.
 - If more spawns than slots occur, extra contestants are appended (defensive).
 

@@ -6,7 +6,7 @@ using HarmonyLib;
 namespace GunGameArena
 {
     [BepInPlugin(Guid, Name, Version)]
-    [BepInDependency("Kodeman.GunGame", BepInDependency.DependencyFlags.HardDependency)]
+    [BepInDependency("Kodeman.GunGame", "1.0.4")]
     public class Plugin : BaseUnityPlugin
     {
         public const string Guid = "shaha.GunGameArena";

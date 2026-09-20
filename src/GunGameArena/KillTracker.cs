@@ -12,6 +12,7 @@ namespace GunGameArena
         private struct LastHit { public int Iff; public Vector3 Point; public float Time; }
 
         public static event Action<Contestant, Contestant> KillRegistered;
+        public static event Action<Slot, int> RetaliationTriggered;
 
         private static readonly Dictionary<int, LastHit> _hits = new Dictionary<int, LastHit>();
         private static readonly HashSet<int> _processed = new HashSet<int>();
@@ -54,7 +55,8 @@ namespace GunGameArena
         public static void RecordHit(Sosig victim, Damage d)
         {
             if (victim == null || d == null || !Roster.Active) return;
-            if (Roster.FindBySosig(victim) == null) return;
+            Slot slot = Roster.FindBySosig(victim);
+            if (slot == null) return;
             Vector3 p = d.Source_Point == Vector3.zero ? d.point : d.Source_Point;
             _hits[victim.GetInstanceID()] = new LastHit { Iff = d.Source_IFF, Point = p, Time = Time.time };
 
@@ -63,6 +65,7 @@ namespace GunGameArena
                 && d.Source_IFF >= 0 && d.Source_IFF != victim.GetIFF() && victim.Priority != null)
             {
                 victim.Priority.MakeEnemy(d.Source_IFF);
+                if (RetaliationTriggered != null) RetaliationTriggered(slot, d.Source_IFF);
             }
         }
 

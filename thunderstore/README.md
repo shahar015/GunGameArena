@@ -18,3 +18,5 @@ Sosig count is GunGame's own setting on the in-map panel.
 ## Credits
 
 Kodeman for GunGame. Built with BepInEx and Harmony.
+
+Requires the GunGame Thunderstore package 1.0.2 or newer (its plugin reports version 1.0.4 internally).

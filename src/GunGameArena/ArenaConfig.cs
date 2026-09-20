@@ -44,7 +44,7 @@ namespace GunGameArena
             AllySosigs = cfg.Bind("Arena", "AllySosigs", -1, "Sosigs on your team in Teams mode. -1 = half of the sosig count.");
 
             LeaderboardEnabled = cfg.Bind("Leaderboard", "Enabled", true, "Show the floating leaderboard HUD.");
-            TopCount = cfg.Bind("Leaderboard", "TopCount", 5, "Cards shown before your own card is pinned at the end.");
+            TopCount = cfg.Bind("Leaderboard", "TopCount", 5, new ConfigDescription("Cards shown before your own card is pinned at the end.", new AcceptableValueRange<int>(1, 12)));
             Scale = cfg.Bind("Leaderboard", "Scale", 1.0f, "Overall HUD size multiplier.");
             Distance = cfg.Bind("Leaderboard", "Distance", 1.0f, "Metres in front of your head.");
             Height = cfg.Bind("Leaderboard", "Height", 0.35f, "Metres above eye line.");
@@ -55,13 +55,13 @@ namespace GunGameArena
 
             SpreadSpawns = cfg.Bind("Behaviour", "SpreadSpawns", true, "Spawn each sosig at the spawner farthest from everyone.");
             Grudges = cfg.Bind("Behaviour", "Grudges", true, "FFA only: each sosig hunts a few rivals at a time instead of everyone.");
-            RivalCount = cfg.Bind("Behaviour", "RivalCount", 3, "Rivals per sosig.");
+            RivalCount = cfg.Bind("Behaviour", "RivalCount", 3, new ConfigDescription("Rivals per sosig.", new AcceptableValueRange<int>(1, 8)));
             RivalRadius = cfg.Bind("Behaviour", "RivalRadius", 40f, "Metres; rivals are picked from contestants within this radius.");
             PlayerRivalWeight = cfg.Bind("Behaviour", "PlayerRivalWeight", 2.0f, "How much more likely you are to be picked as a rival than a sosig (1 = equal).");
             RivalRerollMin = cfg.Bind("Behaviour", "RivalRerollSecondsMin", 20f, "Seconds between rival re-rolls (min).");
             RivalRerollMax = cfg.Bind("Behaviour", "RivalRerollSecondsMax", 40f, "Seconds between rival re-rolls (max).");
             Hunters = cfg.Bind("Behaviour", "Hunters", true, "Periodically send a share of hostile sosigs toward you.");
-            HunterShare = cfg.Bind("Behaviour", "HunterShare", 0.25f, "Fraction of hostile sosigs sent toward you each interval.");
+            HunterShare = cfg.Bind("Behaviour", "HunterShare", 0.25f, new ConfigDescription("Fraction of hostile sosigs sent toward you each interval.", new AcceptableValueRange<float>(0f, 1f)));
             HunterIntervalMin = cfg.Bind("Behaviour", "HunterIntervalSecondsMin", 10f, "Seconds between hunter orders (min).");
             HunterIntervalMax = cfg.Bind("Behaviour", "HunterIntervalSecondsMax", 20f, "Seconds between hunter orders (max).");
             SkillTiers = cfg.Bind("Behaviour", "SkillTiers", true, "Roll Rookie/Regular/Veteran/Elite per contestant; affects aim, not fire volume.");
