@@ -1,10 +1,13 @@
 using System;
 using System.Collections;
+using System.Reflection;
 using System.Text;
 using GunGame.Scripts;
 using GunGame.Scripts.Options;
+using HarmonyLib;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace GunGameArena.Panel
 {
@@ -20,6 +23,19 @@ namespace GunGameArena.Panel
         private const int MaxPolls = 20;
         private const int MaxCanvasDumpCount = 15;
         private const int MaxDumpLineLength = 200;
+
+        // More-options-board strategy: anchors on the board that holds GameSettings' private
+        // sosig-cap Text field, which (unlike the centre weapon-pool canvas) lives at the right scale.
+        private const string MaxSosigCountTextFieldName = "MaxSosigCountText";
+        private const float MinBoardHeightMetres = 0.3f;
+        private const float MaxBoardHeightMetres = 6f;
+        private const float MoreOptionsHeightBoost = 1.15f;
+        private const float CanvasChildMaxWidthMetres = 2.0f;
+        private const int MaxBoardDumpChildren = 20;
+        private const string WeaponPoolSelectionPanelName = "WeaponPoolSelectionPanel";
+
+        private static readonly FieldInfo MaxSosigCountTextField =
+            AccessTools.Field(typeof(GameSettings), MaxSosigCountTextFieldName);
 
         private static PanelInstaller _runner;
         private static ArenaPanel _panel;
@@ -83,8 +99,15 @@ namespace GunGameArena.Panel
                 var settings = MonoBehaviourSingleton<GameSettings>.Instance;
                 if (settings == null) return false;
 
-                BuildPanel(settings);
-                DumpHierarchy(settings);
+                try
+                {
+                    BuildPanel(settings);
+                }
+                finally
+                {
+                    // Runs even if BuildPanel threw, so a failed build still leaves us a hierarchy dump to debug from.
+                    DumpHierarchy(settings);
+                }
                 return true;
             }
             catch (Exception e)
@@ -98,6 +121,14 @@ namespace GunGameArena.Panel
         {
             try
             {
+                // Tried first: anchors on GunGame's own "More options" board via its sosig-cap Text field,
+                // which sits at a sane in-world scale (unlike the centre weapon-pool canvas, whose 0.005
+                // lossyScale used to blow our panel up to ~3 m wide on the wall).
+                if (PlaceUsingMoreOptionsBoard(settings))
+                {
+                    return;
+                }
+
                 Transform anchor = settings.transform;
                 string strategy;
                 Canvas canvas = settings.GetComponentInParent<Canvas>();
@@ -121,7 +152,11 @@ namespace GunGameArena.Panel
 
                 if (canvas != null)
                 {
-                    PlaceUsingCanvas(canvas);
+                    // canvas-child/canvas-nearest can land on a canvas with a degenerate lossyScale (e.g. the
+                    // centre weapon-pool canvas), so cap the width we'd inherit from it; canvas-parent is the
+                    // host's own settings canvas and is trusted at its native scale.
+                    bool capScale = strategy == "canvas-child" || strategy == "canvas-nearest";
+                    PlaceUsingCanvas(canvas, capScale);
                 }
                 else if (PlaceUsingRendererBounds(anchor))
                 {
@@ -140,6 +175,145 @@ namespace GunGameArena.Panel
                 Plugin.Log.LogError("PanelInstaller.BuildPanel: " + e);
                 throw;
             }
+        }
+
+        /// <summary>Primary strategy: anchor on the board group that contains GameSettings' private
+        /// MaxSosigCountText field (the "More options" board's sosig-cap row). Returns false — building
+        /// nothing — if the field/Text/board can't be resolved or the measured board looks degenerate,
+        /// so BuildPanel falls through to the older canvas-based strategies.</summary>
+        private static bool PlaceUsingMoreOptionsBoard(GameSettings settings)
+        {
+            Transform board;
+            Text capText;
+            float minX, maxX, minY, maxY, widthMetres, heightMetres;
+            if (!TryFindMoreOptionsBoard(settings, out board, out capText,
+                out minX, out maxX, out minY, out maxY, out widthMetres, out heightMetres))
+            {
+                return false;
+            }
+
+            if (heightMetres < MinBoardHeightMetres || heightMetres > MaxBoardHeightMetres)
+            {
+                Plugin.Log.LogInfo("[Panel dump] More-options board height " + heightMetres.ToString("0.###") +
+                    " m looks degenerate; falling back to older anchor strategies.");
+                return false;
+            }
+
+            try
+            {
+                float scale = heightMetres / ArenaPanel.Height * ArenaConfig.PanelScale.Value * MoreOptionsHeightBoost;
+
+                _panel = ArenaPanel.Build();
+                Transform t = _panel.transform;
+                t.rotation = board.rotation;
+                t.localScale = Vector3.one * scale;
+                float ourHalfWidth = ArenaPanel.Width * scale * 0.5f;
+
+                Vector3 boardLeftWorld = board.TransformPoint(new Vector3(minX, 0f, 0f));
+                t.position = boardLeftWorld - board.right * (GapMetres + ourHalfWidth);
+
+                Vector3 boardTopWorld = board.TransformPoint(new Vector3(0f, maxY, 0f));
+                Vector3 delta = Vector3.Project(boardTopWorld - t.position, board.up);
+                t.position += delta - board.up * (ArenaPanel.Height * scale * 0.5f);
+
+                Plugin.Log.LogInfo("Arena panel placed via more-options-board (board '" + board.name + "', " +
+                    widthMetres.ToString("0.##") + "x" + heightMetres.ToString("0.##") + " m).");
+                return true;
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.LogError("PanelInstaller.PlaceUsingMoreOptionsBoard: " + e);
+                return false;
+            }
+        }
+
+        /// <summary>Resolves the "More options" board and its local-space extents from GameSettings'
+        /// private MaxSosigCountText field, without building or placing anything. Shared by the placement
+        /// strategy above and by the hierarchy dump, so both describe the same board the same way.</summary>
+        private static bool TryFindMoreOptionsBoard(GameSettings settings, out Transform board, out Text capText,
+            out float minX, out float maxX, out float minY, out float maxY, out float widthMetres, out float heightMetres)
+        {
+            board = null;
+            capText = null;
+            minX = maxX = minY = maxY = widthMetres = heightMetres = 0f;
+            try
+            {
+                if (MaxSosigCountTextField == null) return false;
+                capText = MaxSosigCountTextField.GetValue(settings) as Text;
+                if (capText == null) return false;
+
+                Transform climb = capText.transform;
+                while (climb != null && climb.parent != null)
+                {
+                    if (climb.parent.GetComponent<Canvas>() != null)
+                    {
+                        board = climb;
+                        break;
+                    }
+                    climb = climb.parent;
+                }
+                if (board == null) board = capText.transform.parent;
+                if (board == null) return false;
+
+                float lMinX = float.MaxValue, lMaxX = float.MinValue, lMinY = float.MaxValue, lMaxY = float.MinValue;
+                bool any = false;
+
+                RectTransform[] rects = board.GetComponentsInChildren<RectTransform>(true);
+                var corners = new Vector3[4];
+                for (int i = 0; i < rects.Length; i++)
+                {
+                    rects[i].GetWorldCorners(corners);
+                    for (int j = 0; j < 4; j++)
+                    {
+                        EncapsulateLocal(board, corners[j], ref lMinX, ref lMaxX, ref lMinY, ref lMaxY);
+                        any = true;
+                    }
+                }
+
+                Renderer[] renderers = board.GetComponentsInChildren<Renderer>(true);
+                for (int i = 0; i < renderers.Length; i++)
+                {
+                    Bounds b = renderers[i].bounds;
+                    Vector3 c = b.center;
+                    Vector3 e = b.extents;
+                    EncapsulateLocal(board, c + new Vector3(e.x, e.y, e.z), ref lMinX, ref lMaxX, ref lMinY, ref lMaxY);
+                    EncapsulateLocal(board, c + new Vector3(e.x, e.y, -e.z), ref lMinX, ref lMaxX, ref lMinY, ref lMaxY);
+                    EncapsulateLocal(board, c + new Vector3(e.x, -e.y, e.z), ref lMinX, ref lMaxX, ref lMinY, ref lMaxY);
+                    EncapsulateLocal(board, c + new Vector3(e.x, -e.y, -e.z), ref lMinX, ref lMaxX, ref lMinY, ref lMaxY);
+                    EncapsulateLocal(board, c + new Vector3(-e.x, e.y, e.z), ref lMinX, ref lMaxX, ref lMinY, ref lMaxY);
+                    EncapsulateLocal(board, c + new Vector3(-e.x, e.y, -e.z), ref lMinX, ref lMaxX, ref lMinY, ref lMaxY);
+                    EncapsulateLocal(board, c + new Vector3(-e.x, -e.y, e.z), ref lMinX, ref lMaxX, ref lMinY, ref lMaxY);
+                    EncapsulateLocal(board, c + new Vector3(-e.x, -e.y, -e.z), ref lMinX, ref lMaxX, ref lMinY, ref lMaxY);
+                    any = true;
+                }
+
+                if (!any) return false;
+
+                minX = lMinX; maxX = lMaxX; minY = lMinY; maxY = lMaxY;
+                widthMetres = Vector3.Distance(
+                    board.TransformPoint(new Vector3(minX, 0f, 0f)),
+                    board.TransformPoint(new Vector3(maxX, 0f, 0f)));
+                heightMetres = Vector3.Distance(
+                    board.TransformPoint(new Vector3(0f, minY, 0f)),
+                    board.TransformPoint(new Vector3(0f, maxY, 0f)));
+                return true;
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.LogError("PanelInstaller.TryFindMoreOptionsBoard: " + e);
+                return false;
+            }
+        }
+
+        /// <summary>Encapsulates one world point into a running local-space min/max on <paramref name="board"/>.</summary>
+        private static void EncapsulateLocal(Transform board, Vector3 worldPoint,
+            ref float minX, ref float maxX, ref float minY, ref float maxY)
+        {
+            Vector3 local = board.InverseTransformPoint(worldPoint);
+            if (local.x < minX) minX = local.x;
+            if (local.x > maxX) maxX = local.x;
+            if (local.y < minY) minY = local.y;
+            if (local.y > maxY) maxY = local.y;
         }
 
         /// <summary>Nearest Canvas to a world position within maxDistance metres, or null if none is close enough.</summary>
@@ -171,8 +345,10 @@ namespace GunGameArena.Panel
         }
 
         /// <summary>Existing, reviewed canvas-based placement: left edge via rect.xMin, top via rect.yMax,
-        /// using the host canvas's own rotation and lossyScale.</summary>
-        private static void PlaceUsingCanvas(Canvas host)
+        /// using the host canvas's own rotation and lossyScale. When <paramref name="capScale"/> is set
+        /// (canvas-child/canvas-nearest, which can land on a canvas with a tiny lossyScale like the centre
+        /// weapon-pool canvas), our adopted scale is capped so our panel is never wider than ~2 m.</summary>
+        private static void PlaceUsingCanvas(Canvas host, bool capScale)
         {
             try
             {
@@ -184,7 +360,9 @@ namespace GunGameArena.Panel
                 _panel = ArenaPanel.Build();
                 Transform t = _panel.transform;
                 t.rotation = host.transform.rotation;
-                t.localScale = host.transform.lossyScale;
+                t.localScale = capScale
+                    ? Vector3.one * Mathf.Min(host.transform.lossyScale.x, CanvasChildMaxWidthMetres / ArenaPanel.Width)
+                    : host.transform.lossyScale;
                 float ourHalfWidth = ArenaPanel.Width * t.localScale.x * 0.5f;
 
                 if (!hostRectDegenerate)
@@ -330,10 +508,87 @@ namespace GunGameArena.Panel
                     Plugin.Log.LogInfo("[Panel dump]   " + DescribeCanvas(c, settings.transform.position));
                     dumped++;
                 }
+
+                Plugin.Log.LogInfo("[Panel dump] More-options board:");
+                DumpMoreOptionsBoard(settings);
+
+                Plugin.Log.LogInfo("[Panel dump] WeaponPoolSelectionPanel direct children (capped at " + MaxBoardDumpChildren + "):");
+                DumpWeaponPoolChildren(settings);
             }
             catch (Exception e)
             {
                 Plugin.Log.LogError("PanelInstaller.DumpHierarchy: " + e);
+            }
+        }
+
+        /// <summary>[Panel dump] detail for the board TryFindMoreOptionsBoard resolves: its path, the
+        /// sosig-cap Text's path, its local extents, and the metres size computed from them.</summary>
+        private static void DumpMoreOptionsBoard(GameSettings settings)
+        {
+            try
+            {
+                Transform board;
+                Text capText;
+                float minX, maxX, minY, maxY, widthMetres, heightMetres;
+                bool found = TryFindMoreOptionsBoard(settings, out board, out capText,
+                    out minX, out maxX, out minY, out maxY, out widthMetres, out heightMetres);
+                if (!found)
+                {
+                    Plugin.Log.LogInfo("[Panel dump]   not found (MaxSosigCountText field missing/null, or no extent data under its board).");
+                    return;
+                }
+
+                Plugin.Log.LogInfo("[Panel dump]   board=" + Truncate(GetPath(board)));
+                Plugin.Log.LogInfo("[Panel dump]   capText=" + Truncate(GetPath(capText.transform)));
+                Plugin.Log.LogInfo("[Panel dump]   extents (board-local) minX=" + minX.ToString("0.###") +
+                    " maxX=" + maxX.ToString("0.###") + " minY=" + minY.ToString("0.###") + " maxY=" + maxY.ToString("0.###"));
+                Plugin.Log.LogInfo("[Panel dump]   size " + widthMetres.ToString("0.###") + "x" + heightMetres.ToString("0.###") + " m");
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.LogError("PanelInstaller.DumpMoreOptionsBoard: " + e);
+            }
+        }
+
+        /// <summary>[Panel dump] listing of WeaponPoolSelectionPanel's direct children, capped at
+        /// MaxBoardDumpChildren lines, so a pasted log doesn't blow up if it turns out to hold every board.</summary>
+        private static void DumpWeaponPoolChildren(GameSettings settings)
+        {
+            try
+            {
+                Transform pool = settings.transform.Find(WeaponPoolSelectionPanelName);
+                if (pool == null)
+                {
+                    Plugin.Log.LogInfo("[Panel dump]   " + WeaponPoolSelectionPanelName + " not found under settings.transform.");
+                    return;
+                }
+
+                int cap = pool.childCount < MaxBoardDumpChildren ? pool.childCount : MaxBoardDumpChildren;
+                for (int i = 0; i < cap; i++)
+                {
+                    Plugin.Log.LogInfo("[Panel dump]   " + Truncate(DescribeWeaponPoolChild(pool.GetChild(i))));
+                }
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.LogError("PanelInstaller.DumpWeaponPoolChildren: " + e);
+            }
+        }
+
+        private static string DescribeWeaponPoolChild(Transform child)
+        {
+            try
+            {
+                RectTransform rt = child as RectTransform;
+                string anchored = rt != null ? rt.anchoredPosition.ToString("0.0") : "n/a";
+                string size = rt != null ? rt.sizeDelta.ToString("0.0") : "n/a";
+                return child.name + " anchoredPosition=" + anchored + " sizeDelta=" + size +
+                    " localEulerAngles.y=" + child.localEulerAngles.y.ToString("0.0");
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.LogError("PanelInstaller.DescribeWeaponPoolChild: " + e);
+                return "<describe error>";
             }
         }
 
@@ -437,7 +692,15 @@ namespace GunGameArena.Panel
 
         private static string Truncate(string line)
         {
-            return line.Length > MaxDumpLineLength ? line.Substring(0, MaxDumpLineLength) : line;
+            try
+            {
+                return line.Length > MaxDumpLineLength ? line.Substring(0, MaxDumpLineLength) : line;
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.LogError("PanelInstaller.Truncate: " + e);
+                return line;
+            }
         }
     }
 }

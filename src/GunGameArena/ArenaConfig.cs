@@ -10,6 +10,8 @@ namespace GunGameArena
         public static ConfigEntry<TeamMode> Mode;
         public static ConfigEntry<int> TeamCount;
         public static ConfigEntry<int> AllySosigs;
+        // Panel
+        public static ConfigEntry<float> PanelScale;
         // Leaderboard
         public static ConfigEntry<bool> LeaderboardEnabled;
         public static ConfigEntry<int> TopCount;
@@ -42,6 +44,8 @@ namespace GunGameArena
             Mode = cfg.Bind("Arena", "Mode", TeamMode.FreeForAll, "Off = original GunGame. FreeForAll = every sosig for itself. Teams = blue (you + allies) vs red (+ green/yellow).");
             TeamCount = cfg.Bind("Arena", "TeamCount", 2, new ConfigDescription("Teams mode only.", new AcceptableValueRange<int>(2, 4)));
             AllySosigs = cfg.Bind("Arena", "AllySosigs", -1, "Sosigs on your team in Teams mode. -1 = half of the sosig count.");
+
+            PanelScale = cfg.Bind("Panel", "Scale", 1.0f, new ConfigDescription("Size multiplier for the in-map Arena panel.", new AcceptableValueRange<float>(0.5f, 2f)));
 
             LeaderboardEnabled = cfg.Bind("Leaderboard", "Enabled", true, "Show the floating leaderboard HUD.");
             TopCount = cfg.Bind("Leaderboard", "TopCount", 5, new ConfigDescription("Cards shown before your own card is pinned at the end.", new AcceptableValueRange<int>(1, 12)));

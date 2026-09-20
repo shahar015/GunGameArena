@@ -53,7 +53,7 @@ Only needed before publishing to Thunderstore.
 
 ## Session 4 — In-map Arena panel
 
-- [ ] On any GunGame map a blue **Arena** panel stands to the left of GunGame's "More options" panel, same height. Log: `Arena panel placed via <strategy>.` If the panel is missing or misplaced, paste the log lines starting `Arena panel placed via` and the `[Panel dump]` block.
+- [ ] On any GunGame map a blue **Arena** panel stands to the left of GunGame's "More options" board, sized to match it. Log should read `Arena panel placed via more-options-board (board '<name>', <w>x<h> m).` If it instead falls back to a different strategy (`Arena panel placed via <strategy>.`), or the panel is missing or misplaced, paste the log lines starting `Arena panel placed via` and the `[Panel dump]` block (includes a `More-options board:` section and a `WeaponPoolSelectionPanel` children listing).
 - [ ] Laser pointer + trigger works on every button; toggles flip their ON/OFF text; `<`/`>` step values.
 - [ ] Toggling **Leaderboard** mid-round hides/shows the HUD immediately.
 - [ ] Set Mode to Teams; Teams and Allies rows brighten; Start Game → header "Team Deathmatch".
@@ -69,4 +69,5 @@ All in `shaha.GunGameArena.cfg`:
 | Fewer / more sosigs | GunGame's own +/- on the in-map panel |
 | Harder sosigs | `[Behaviour] TierWeights` e.g. `10,30,35,25` |
 | HUD too big / close | `[Leaderboard] Scale`, `Distance`, `Height` |
+| Arena panel too big / small | `[Panel] Scale` 1.0 → 0.5–2.0 |
 | Only the leaderboard, original GunGame combat | `[Arena] Mode = Off` |
