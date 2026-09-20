@@ -89,4 +89,23 @@ public class TeamAssignerTests
         Assert.NotEqual(2, TeamAssigner.IffFor(TeamMode.Teams, 2, 2));
         Assert.Equal(1, TeamAssigner.IffFor(TeamMode.Teams, 1, 2));
     }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(3)]
+    [InlineData(7)]
+    public void FreeForAll_iffs_are_pairwise_distinct_and_never_the_player_iff(int playerIff)
+    {
+        var iffs = new List<int>();
+        for (int slot = 0; slot < 8; slot++)
+        {
+            int team = TeamAssigner.TeamIndexFor(TeamMode.FreeForAll, slot, 8, 2, -1);
+            int iff = TeamAssigner.IffFor(TeamMode.FreeForAll, team, playerIff);
+            Assert.NotEqual(playerIff, iff);
+            Assert.InRange(iff, 1, 31);
+            iffs.Add(iff);
+        }
+        Assert.Equal(iffs.Count, iffs.Distinct().Count());
+    }
 }

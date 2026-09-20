@@ -45,9 +45,9 @@ namespace GunGameArena.Core
             {
                 case TeamMode.FreeForAll:
                 {
-                    int iff = Math.Min(Math.Max(1, teamIndex), MaxIff);
-                    if (iff == playerIff) iff = iff < MaxIff ? iff + 1 : MaxIff - 1;
-                    return iff;
+                    int iff = Math.Max(1, teamIndex);
+                    if (playerIff >= 1 && iff >= playerIff) iff += 1;   // skip the player's IFF, keep all sosig IFFs distinct
+                    return Math.Min(iff, MaxIff);
                 }
                 case TeamMode.Teams:
                 {
