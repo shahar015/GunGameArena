@@ -108,6 +108,8 @@ namespace GunGameArena.Panel
                     // Runs even if BuildPanel threw, so a failed build still leaves us a hierarchy dump to debug from.
                     DumpHierarchy(settings);
                 }
+                try { Behaviour.TeamMatch.ApplyWeaponCountLock(); }
+                catch (Exception e) { Plugin.Log.LogError("PanelInstaller.TryBuild (weapon-count lock): " + e); }
                 return true;
             }
             catch (Exception e)
@@ -223,6 +225,7 @@ namespace GunGameArena.Panel
             catch (Exception e)
             {
                 Plugin.Log.LogError("PanelInstaller.PlaceUsingMoreOptionsBoard: " + e);
+                if (_panel != null) { UnityEngine.Object.Destroy(_panel.gameObject); _panel = null; }
                 return false;
             }
         }
@@ -309,11 +312,15 @@ namespace GunGameArena.Panel
         private static void EncapsulateLocal(Transform board, Vector3 worldPoint,
             ref float minX, ref float maxX, ref float minY, ref float maxY)
         {
-            Vector3 local = board.InverseTransformPoint(worldPoint);
-            if (local.x < minX) minX = local.x;
-            if (local.x > maxX) maxX = local.x;
-            if (local.y < minY) minY = local.y;
-            if (local.y > maxY) maxY = local.y;
+            try
+            {
+                Vector3 local = board.InverseTransformPoint(worldPoint);
+                if (local.x < minX) minX = local.x;
+                if (local.x > maxX) maxX = local.x;
+                if (local.y < minY) minY = local.y;
+                if (local.y > maxY) maxY = local.y;
+            }
+            catch (Exception e) { Plugin.Log.LogError("PanelInstaller.EncapsulateLocal: " + e); }
         }
 
         /// <summary>Nearest Canvas to a world position within maxDistance metres, or null if none is close enough.</summary>

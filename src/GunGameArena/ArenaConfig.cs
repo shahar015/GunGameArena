@@ -10,6 +10,10 @@ namespace GunGameArena
         public static ConfigEntry<TeamMode> Mode;
         public static ConfigEntry<int> TeamCount;
         public static ConfigEntry<int> AllySosigs;
+        // Teams
+        public static ConfigEntry<int> PointsToWin;
+        public static ConfigEntry<bool> FriendlyFire;
+        public static ConfigEntry<float> TagRange;
         // Panel
         public static ConfigEntry<float> PanelScale;
         // Leaderboard
@@ -44,6 +48,10 @@ namespace GunGameArena
             Mode = cfg.Bind("Arena", "Mode", TeamMode.FreeForAll, "Off = original GunGame. FreeForAll = every sosig for itself. Teams = blue (you + allies) vs red (+ green/yellow).");
             TeamCount = cfg.Bind("Arena", "TeamCount", 2, new ConfigDescription("Teams mode only.", new AcceptableValueRange<int>(2, 4)));
             AllySosigs = cfg.Bind("Arena", "AllySosigs", -1, "Sosigs on your team in Teams mode. -1 = half of the sosig count.");
+
+            PointsToWin = cfg.Bind("Teams", "PointsToWin", 30, new ConfigDescription("Team Deathmatch: team score that ends the round.", new AcceptableValueRange<int>(5, 200)));
+            FriendlyFire = cfg.Bind("Teams", "FriendlyFire", false, "Team Deathmatch: when false your shots never damage your own team.");
+            TagRange = cfg.Bind("Teams", "TagRange", 30f, "Team Deathmatch: teammate name tags are hidden beyond this distance (metres).");
 
             PanelScale = cfg.Bind("Panel", "Scale", 1.0f, new ConfigDescription("Size multiplier for the in-map Arena panel.", new AcceptableValueRange<float>(0.5f, 2f)));
 

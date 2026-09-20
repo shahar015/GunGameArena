@@ -55,6 +55,7 @@ namespace GunGameArena
         public static void RecordHit(Sosig victim, Damage d)
         {
             if (victim == null || d == null || !Roster.Active) return;
+            if (Behaviour.TeamMatch.ShouldBlockFriendlyFire(victim, d)) return;
             Slot slot = Roster.FindBySosig(victim);
             if (slot == null) return;
             Vector3 p = d.Source_Point == Vector3.zero ? d.point : d.Source_Point;

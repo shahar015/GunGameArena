@@ -42,6 +42,10 @@ Edit the config: `[Arena] Mode = Teams` (keep TeamCount 2, AllySosigs -1). Resta
 - [ ] Blue sosigs never shoot you and never appear under `Hunters:`.
 - [ ] One crown per team (best scorer of blue, best of red), none for a team with zero kills.
 - [ ] Log shows `Blocked progression credit: kill was by an ally` when a blue sosig kills someone, and your weapon does **not** advance on it.
+- [ ] Number of weapons controls on GunGame's board are dimmed and unclickable; log `'Number of weapons' controls locked`.
+- [ ] Reaching the last weapon loops back to the first (`weapon rotation looped`).
+- [ ] Shooting a blue sosig does nothing (Friendly fire OFF).
+- [ ] Panel shows Points to win and Friendly fire rows when Mode = Teams.
 
 ## Session 3 (optional) — zip install test
 

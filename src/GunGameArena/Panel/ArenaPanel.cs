@@ -10,14 +10,14 @@ namespace GunGameArena.Panel
     public class ArenaPanel : MonoBehaviour
     {
         public const float Width = 620f;
-        public const float Height = 700f;
+        public const float Height = 820f;
         private const float RowH = 52f;
         private const float FirstRowY = -110f;
         private const float BtnH = 34f;
 
-        private Text _modeValue, _teamsValue, _alliesValue, _hunterShareValue;
-        private Text _teamsLabel, _alliesLabel;
-        private Text _leaderboardBtn, _spreadBtn, _grudgesBtn, _huntersBtn, _tiersBtn;
+        private Text _modeValue, _teamsValue, _alliesValue, _hunterShareValue, _pointsValue;
+        private Text _teamsLabel, _alliesLabel, _pointsLabel;
+        private Text _leaderboardBtn, _spreadBtn, _grudgesBtn, _huntersBtn, _tiersBtn, _friendlyFireBtn;
 
         public static ArenaPanel Build()
         {
@@ -64,6 +64,14 @@ namespace GunGameArena.Panel
             UiFactory.MakeButton(p, "AlliesPrev", "<", new Vector2(-60f, y), new Vector2(50f, BtnH), () => Click(() => { ArenaConfig.AllySosigs.Value = PanelModel.StepAllies(ArenaConfig.AllySosigs.Value, -1); }), out dummy);
             _alliesValue = UiFactory.MakeText(p, "AlliesValue", "", 26, Color.white, new Vector2(95f, y), new Vector2(230f, RowH), TextAnchor.MiddleCenter, FontStyle.Bold);
             UiFactory.MakeButton(p, "AlliesNext", ">", new Vector2(250f, y), new Vector2(50f, BtnH), () => Click(() => { ArenaConfig.AllySosigs.Value = PanelModel.StepAllies(ArenaConfig.AllySosigs.Value, +1); }), out dummy);
+            y -= RowH;
+            // Points to win / Friendly fire (Teams only)
+            _pointsLabel = UiFactory.MakeText(p, "PointsLabel", "Points to win", 26, Color.white, new Vector2(-200f, y), new Vector2(180f, RowH), TextAnchor.MiddleLeft, FontStyle.Normal);
+            UiFactory.MakeButton(p, "PointsPrev", "<", new Vector2(-60f, y), new Vector2(50f, BtnH), () => Click(() => { ArenaConfig.PointsToWin.Value = PanelModel.StepPointsToWin(ArenaConfig.PointsToWin.Value, -1); }), out dummy);
+            _pointsValue = UiFactory.MakeText(p, "PointsValue", "", 26, Color.white, new Vector2(95f, y), new Vector2(230f, RowH), TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiFactory.MakeButton(p, "PointsNext", ">", new Vector2(250f, y), new Vector2(50f, BtnH), () => Click(() => { ArenaConfig.PointsToWin.Value = PanelModel.StepPointsToWin(ArenaConfig.PointsToWin.Value, +1); }), out dummy);
+            y -= RowH;
+            UiFactory.MakeButton(p, "FriendlyFireToggle", "", new Vector2(0f, y), new Vector2(420f, BtnH), () => Click(() => { ArenaConfig.FriendlyFire.Value = !ArenaConfig.FriendlyFire.Value; }), out _friendlyFireBtn);
             y -= RowH + 10f;
             // Toggles
             UiFactory.MakeButton(p, "LeaderboardToggle", "", new Vector2(0f, y), new Vector2(420f, BtnH), () => Click(() =>
@@ -76,11 +84,11 @@ namespace GunGameArena.Panel
             y -= RowH;
             UiFactory.MakeButton(p, "GrudgesToggle", "", new Vector2(0f, y), new Vector2(420f, BtnH), () => Click(() => { ArenaConfig.Grudges.Value = !ArenaConfig.Grudges.Value; }), out _grudgesBtn);
             y -= 38f;
-            UiFactory.MakeText(p, "GrudgesNote", "(each sosig fights 3 rivals at a time, not everyone — keeps FFA from being one blob)", 17, new Color(1f, 1f, 1f, 0.85f), new Vector2(0f, y), new Vector2(Width - 60f, 40f), TextAnchor.UpperCenter, FontStyle.Italic);
+            UiFactory.MakeText(p, "GrudgesNote", "(each sosig fights 3 rivals at a time, not everyone)", 17, new Color(1f, 1f, 1f, 0.85f), new Vector2(0f, y), new Vector2(Width - 60f, 40f), TextAnchor.UpperCenter, FontStyle.Italic);
             y -= 40f;
             UiFactory.MakeButton(p, "HuntersToggle", "", new Vector2(0f, y), new Vector2(420f, BtnH), () => Click(() => { ArenaConfig.Hunters.Value = !ArenaConfig.Hunters.Value; }), out _huntersBtn);
             y -= 38f;
-            UiFactory.MakeText(p, "HuntersNote", "(every 10–20 s a few sosigs are sent toward you — without this an FFA mostly ignores you)", 17, new Color(1f, 1f, 1f, 0.85f), new Vector2(0f, y), new Vector2(Width - 60f, 40f), TextAnchor.UpperCenter, FontStyle.Italic);
+            UiFactory.MakeText(p, "HuntersNote", "(every 10–20 s a few sosigs are sent toward you)", 17, new Color(1f, 1f, 1f, 0.85f), new Vector2(0f, y), new Vector2(Width - 60f, 40f), TextAnchor.UpperCenter, FontStyle.Italic);
             y -= 44f;
             // Hunter pressure
             UiFactory.MakeText(p, "HunterShareLabel", "Pressure", 26, Color.white, new Vector2(-200f, y), new Vector2(180f, RowH), TextAnchor.MiddleLeft, FontStyle.Normal);
@@ -89,7 +97,9 @@ namespace GunGameArena.Panel
             UiFactory.MakeButton(p, "HunterShareNext", ">", new Vector2(250f, y), new Vector2(50f, BtnH), () => Click(() => { ArenaConfig.HunterShare.Value = PanelModel.StepHunterShare(ArenaConfig.HunterShare.Value, +1); }), out dummy);
             y -= RowH;
             UiFactory.MakeButton(p, "TiersToggle", "", new Vector2(0f, y), new Vector2(420f, BtnH), () => Click(() => { ArenaConfig.SkillTiers.Value = !ArenaConfig.SkillTiers.Value; }), out _tiersBtn);
-            y -= RowH + 6f;
+            y -= 38f;
+            UiFactory.MakeText(p, "TiersNote", "(each sosig gets an aim level: Rookie ^ … Elite ^^^^)", 17, new Color(1f, 1f, 1f, 0.85f), new Vector2(0f, y), new Vector2(Width - 60f, 40f), TextAnchor.UpperCenter, FontStyle.Italic);
+            y -= 40f;
             UiFactory.MakeText(p, "Footer", "Mode, Teams and Allies apply at the next Start Game. Everything saves to the config file.", 17, new Color(1f, 1f, 1f, 0.85f), new Vector2(0f, y), new Vector2(Width - 60f, 50f), TextAnchor.UpperCenter, FontStyle.Normal);
         }
 
@@ -107,8 +117,10 @@ namespace GunGameArena.Panel
                 _modeValue.text = PanelModel.ModeLabel(mode);
                 _teamsValue.text = ArenaConfig.TeamCount.Value.ToString();
                 _alliesValue.text = PanelModel.AlliesLabel(ArenaConfig.AllySosigs.Value);
+                _pointsValue.text = ArenaConfig.PointsToWin.Value.ToString();
+                _friendlyFireBtn.text = PanelModel.ToggleLabel("Friendly fire", ArenaConfig.FriendlyFire.Value);
                 float a = PanelModel.TeamRowsEnabled(mode) ? 1f : 0.4f;
-                foreach (var t in new[] { _teamsLabel, _teamsValue, _alliesLabel, _alliesValue }) t.color = new Color(1f, 1f, 1f, a);
+                foreach (var t in new[] { _teamsLabel, _teamsValue, _alliesLabel, _alliesValue, _pointsLabel, _pointsValue, _friendlyFireBtn }) t.color = new Color(1f, 1f, 1f, a);
                 _leaderboardBtn.text = PanelModel.ToggleLabel("Leaderboard", ArenaConfig.LeaderboardEnabled.Value);
                 _spreadBtn.text = PanelModel.ToggleLabel("Spread spawns", ArenaConfig.SpreadSpawns.Value);
                 _grudgesBtn.text = PanelModel.ToggleLabel("Grudges", ArenaConfig.Grudges.Value);
@@ -117,6 +129,9 @@ namespace GunGameArena.Panel
                 _tiersBtn.text = PanelModel.ToggleLabel("Skill tiers", ArenaConfig.SkillTiers.Value);
             }
             catch (Exception e) { Plugin.Log.LogError("ArenaPanel.Refresh: " + e); }
+
+            try { Behaviour.TeamMatch.ApplyWeaponCountLock(); }
+            catch (Exception e) { Plugin.Log.LogError("ArenaPanel.Refresh (weapon-count lock): " + e); }
         }
     }
 }
