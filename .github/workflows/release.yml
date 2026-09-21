@@ -20,10 +20,10 @@ jobs:
       THUNDERSTORE_TOKEN: ${{ secrets.THUNDERSTORE_TOKEN }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.x
 
@@ -64,15 +64,39 @@ jobs:
           files: ${{ steps.release.outputs.zip_path }}
           body_path: thunderstore/CHANGELOG.md
 
+      - name: Check Thunderstore for existing version
+        id: tsver
+        run: |
+          $manifest = Get-Content thunderstore/manifest.json | ConvertFrom-Json
+          $version = $manifest.version_number
+          $url = "https://thunderstore.io/api/experimental/package/ZGames/GunGameArena/$version/"
+          $response = Invoke-WebRequest -Uri $url -UseBasicParsing -SkipHttpErrorCheck
+          if ($response.StatusCode -eq 200) {
+            Write-Host "Version $version already exists on Thunderstore."
+            "exists=true" >> $env:GITHUB_OUTPUT
+          } elseif ($response.StatusCode -eq 404) {
+            Write-Host "Version $version not found on Thunderstore; safe to publish."
+            "exists=false" >> $env:GITHUB_OUTPUT
+          } else {
+            Write-Error "Unexpected status $($response.StatusCode) checking Thunderstore for version $version."
+            exit 1
+          }
+
       - name: Install Thunderstore CLI
-        if: ${{ env.THUNDERSTORE_TOKEN != '' }}
+        if: ${{ env.THUNDERSTORE_TOKEN != '' && steps.tsver.outputs.exists == 'false' }}
         run: dotnet tool install -g tcli --version 0.2.4
 
       - name: Publish to Thunderstore
-        if: ${{ env.THUNDERSTORE_TOKEN != '' }}
+        if: ${{ env.THUNDERSTORE_TOKEN != '' && steps.tsver.outputs.exists == 'false' }}
         run: |
           $env:PATH += ";$env:USERPROFILE\.dotnet\tools"
           tcli publish --config-path thunderstore.toml --token "$env:THUNDERSTORE_TOKEN" --file "${{ steps.release.outputs.zip_path }}"
+
+      - name: Notice - Thunderstore publish skipped (already published)
+        if: ${{ steps.tsver.outputs.exists == 'true' }}
+        run: |
+          $manifest = Get-Content thunderstore/manifest.json | ConvertFrom-Json
+          Write-Host "::notice::Version $($manifest.version_number) already on Thunderstore; publish skipped"
 
       - name: Notice - Thunderstore publish skipped
         if: ${{ env.THUNDERSTORE_TOKEN == '' }}
