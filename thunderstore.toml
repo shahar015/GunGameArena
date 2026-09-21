@@ -1,0 +1,36 @@
+[config]
+schemaVersion = "0.0.1"
+
+[general]
+repository = "https://thunderstore.io"
+
+[package]
+namespace = "ZGames"
+name = "GunGameArena"
+versionNumber = "1.0.0"
+description = "GunGame companion: Free For All or Team Deathmatch sosig combat, an in-map settings panel, and a Roblox-style leaderboard with portraits."
+websiteUrl = "https://github.com/shahar015/GunGameArena"
+containsNsfwContent = false
+
+[package.dependencies]
+BepInEx-BepInExPack_H3VR = "5.4.1700"
+Kodeman-GunGame = "1.0.2"
+
+[build]
+icon = "./thunderstore/icon.png"
+readme = "./thunderstore/README.md"
+outdir = "./dist"
+
+[[build.copy]]
+source = "./src/GunGameArena/bin/Release/GunGameArena.dll"
+target = "plugins/GunGameArena/"
+
+[[build.copy]]
+source = "./src/GunGameArena/bin/Release/GunGameArena.Core.dll"
+target = "plugins/GunGameArena/"
+
+[publish]
+communities = ["h3vr"]
+
+[publish.categories]
+h3vr = ["mods"]

@@ -1,0 +1,79 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-test-pack-release:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      H3VR_DIR: ${{ github.workspace }}\ci\game
+      H3VR_PROFILE_DIR: ${{ github.workspace }}\ci\profile\BepInEx
+      THUNDERSTORE_TOKEN: ${{ secrets.THUNDERSTORE_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Fetch reference assemblies
+        run: tools/ci-fetch-refs.ps1 -GameDir "$env:H3VR_DIR" -ProfileDir "$env:H3VR_PROFILE_DIR"
+
+      - name: Build
+        run: dotnet build GunGameArena.slnx -c Release
+
+      - name: Test
+        run: dotnet test tests/GunGameArena.Core.Tests -c Release
+
+      - name: Pack Thunderstore zip
+        run: tools/pack.ps1
+
+      - name: Verify tag matches manifest version, resolve zip path
+        id: release
+        run: |
+          $tagVersion = "${{ github.ref_name }}" -replace '^v', ''
+          $manifest = Get-Content thunderstore/manifest.json | ConvertFrom-Json
+          $manifestVersion = $manifest.version_number
+          Write-Host "Tag version:      $tagVersion"
+          Write-Host "Manifest version: $manifestVersion"
+          if ($tagVersion -ne $manifestVersion) {
+            Write-Error "Tag 'v$tagVersion' does not match thunderstore/manifest.json version_number '$manifestVersion'."
+            exit 1
+          }
+          $zipPath = "dist/GunGameArena-$manifestVersion.zip"
+          if (-not (Test-Path $zipPath)) {
+            throw "Expected packed zip not found: $zipPath"
+          }
+          "zip_path=$zipPath" >> $env:GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          files: ${{ steps.release.outputs.zip_path }}
+          body_path: thunderstore/CHANGELOG.md
+
+      - name: Install Thunderstore CLI
+        if: ${{ env.THUNDERSTORE_TOKEN != '' }}
+        run: dotnet tool install -g tcli --version 0.2.4
+
+      - name: Publish to Thunderstore
+        if: ${{ env.THUNDERSTORE_TOKEN != '' }}
+        run: |
+          $env:PATH += ";$env:USERPROFILE\.dotnet\tools"
+          tcli publish --config-path thunderstore.toml --token "$env:THUNDERSTORE_TOKEN" --file "${{ steps.release.outputs.zip_path }}"
+
+      - name: Notice - Thunderstore publish skipped
+        if: ${{ env.THUNDERSTORE_TOKEN == '' }}
+        run: Write-Host "::notice::THUNDERSTORE_TOKEN secret is empty; skipping Thunderstore publish."

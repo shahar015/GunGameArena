@@ -1,5 +1,7 @@
 # GunGame Arena
 
+[![CI](https://github.com/shahar015/GunGameArena/actions/workflows/ci.yml/badge.svg)](https://github.com/shahar015/GunGameArena/actions/workflows/ci.yml)
+
 A BepInEx companion plugin for Kodeman's **GunGame** (H3VR) that makes sosigs fight each
 other, not just you — Free For All or Team Deathmatch, spread spawns, grudges, hunters,
 skill tiers, an in-map settings panel, and a floating Arsenal-style leaderboard with head
@@ -52,6 +54,30 @@ powershell -ExecutionPolicy Bypass -File tools\pack.ps1
 
 This reads the version from `thunderstore/manifest.json` and writes
 `dist\GunGameArena-<version>.zip`.
+
+## Releasing
+
+CI builds, tests and packs every push to `main` and every pull request
+(`.github/workflows/ci.yml`), and publishes a tagged release
+(`.github/workflows/release.yml`):
+
+1. Bump the version in three places, kept in sync:
+   - `version_number` in `thunderstore/manifest.json`
+   - `Version` in `src/GunGameArena/Plugin.cs`
+   - `versionNumber` in `thunderstore.toml`
+2. Add a new entry to `thunderstore/CHANGELOG.md`.
+3. Commit the changes.
+4. Tag and push:
+
+   ```powershell
+   git tag v1.0.1
+   git push --tags
+   ```
+
+Pushing a `v*` tag verifies the tag matches `thunderstore/manifest.json`, builds and tests
+the plugin, creates a GitHub Release with the packed zip attached, and publishes it to
+Thunderstore using the `THUNDERSTORE_TOKEN` repository secret (the publish step is skipped
+with a notice if that secret isn't set).
 
 ## Project layout
 

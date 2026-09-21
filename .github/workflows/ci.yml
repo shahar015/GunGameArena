@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-test-pack:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      # Fake H3VR install + BepInEx profile, populated by tools/ci-fetch-refs.ps1.
+      # Directory.Build.props / GunGameArena.csproj read these the same way they'd read a
+      # real local install. H3VR_PROFILE_DIR ends up containing a "plugins" folder (the
+      # GunGame/Sodalite/Atlas dependency DLLs land there), so GunGameArena.csproj's
+      # CopyToProfile target runs and harmlessly copies the built plugin into this
+      # throwaway CI workspace directory.
+      H3VR_DIR: ${{ github.workspace }}\ci\game
+      H3VR_PROFILE_DIR: ${{ github.workspace }}\ci\profile\BepInEx
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Fetch reference assemblies
+        run: tools/ci-fetch-refs.ps1 -GameDir "$env:H3VR_DIR" -ProfileDir "$env:H3VR_PROFILE_DIR"
+
+      - name: Build
+        run: dotnet build GunGameArena.slnx -c Release
+
+      - name: Test
+        run: dotnet test tests/GunGameArena.Core.Tests -c Release
+
+      - name: Pack Thunderstore zip
+        run: tools/pack.ps1
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GunGameArena-thunderstore-zip
+          path: dist/*.zip
+          if-no-files-found: error
