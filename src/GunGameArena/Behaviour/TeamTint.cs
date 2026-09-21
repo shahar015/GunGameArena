@@ -48,19 +48,21 @@ namespace GunGameArena.Behaviour
                 {
                     Renderer r = renderers[i];
                     if (r == null) continue;
-                    Material[] materials = r.materials; // instances, safe to modify in place
-                    for (int j = 0; j < materials.Length; j++)
-                    {
-                        Material m = materials[j];
-                        if (m == null || !m.HasProperty("_Color")) continue;
-                        m.SetColor("_Color", Color.Lerp(m.GetColor("_Color"), teamBlue, TintStrength));
-                        tinted++;
-                    }
+                    // MaterialPropertyBlock: tints the renderer without instancing r.materials, so the
+                    // shared material (and every other renderer using it) stays untouched.
+                    var block = new MaterialPropertyBlock();
+                    r.GetPropertyBlock(block);
+                    if (r.sharedMaterial == null || !r.sharedMaterial.HasProperty("_Color")) continue;
+                    Color tintedColor = Color.Lerp(r.sharedMaterial.GetColor("_Color"), teamBlue, TintStrength);
+                    block.SetColor("_Color", tintedColor);
+                    r.SetPropertyBlock(block);
+                    tinted++;
                 }
 
                 if (tinted > 0)
                 {
-                    Plugin.Log.LogInfo("TeamTint: tinted " + tinted + " materials on " + slot.Contestant.Name);
+                    if (ArenaConfig.DebugLogging.Value)
+                        Plugin.Log.LogInfo("TeamTint: tinted " + tinted + " materials on " + slot.Contestant.Name);
                 }
                 else if (!_warnedNoColorProperty)
                 {

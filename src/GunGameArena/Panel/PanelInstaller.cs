@@ -49,6 +49,10 @@ namespace GunGameArena.Panel
         {
             try
             {
+                // Additive loads layer a scene on top of the current one without tearing down what's
+                // already there; if we already have a good panel, keep it instead of tearing it down
+                // and re-polling for a settings panel that never went away.
+                if (mode == LoadSceneMode.Additive && _panel != null) return;
                 if (_panel != null) { Destroy(_panel.gameObject); }
                 _panel = null;   // previous panel died with its scene
                 if (_runner == null)
@@ -105,8 +109,9 @@ namespace GunGameArena.Panel
                 }
                 finally
                 {
-                    // Runs even if BuildPanel threw, so a failed build still leaves us a hierarchy dump to debug from.
-                    DumpHierarchy(settings);
+                    // Runs even if BuildPanel threw, so a failed build still leaves us a hierarchy dump to debug from
+                    // (when debug logging is enabled).
+                    DumpHierarchyIfEnabled(settings);
                 }
                 try { Behaviour.TeamMatch.ApplyWeaponCountLock(); }
                 catch (Exception e) { Plugin.Log.LogError("PanelInstaller.TryBuild (weapon-count lock): " + e); }
@@ -175,6 +180,8 @@ namespace GunGameArena.Panel
             catch (Exception e)
             {
                 Plugin.Log.LogError("PanelInstaller.BuildPanel: " + e);
+                // Don't leave a half-built panel behind for TryBuild to treat as "already have one".
+                if (_panel != null) { Destroy(_panel.gameObject); _panel = null; }
                 throw;
             }
         }
@@ -481,6 +488,17 @@ namespace GunGameArena.Panel
                 Plugin.Log.LogError("PanelInstaller.PlaceUsingFallbackOffset: " + e);
                 throw;
             }
+        }
+
+        /// <summary>Gates the [Panel dump] diagnostic behind ArenaConfig.DebugLogging so a normal run's
+        /// log doesn't fill up with hierarchy dumps on every scene load.</summary>
+        private static void DumpHierarchyIfEnabled(GameSettings settings)
+        {
+            try
+            {
+                if (ArenaConfig.DebugLogging.Value) DumpHierarchy(settings);
+            }
+            catch (Exception e) { Plugin.Log.LogError("PanelInstaller.DumpHierarchyIfEnabled: " + e); }
         }
 
         /// <summary>Diagnostic dump of the real GunGame panel hierarchy, so the next iteration can be exact

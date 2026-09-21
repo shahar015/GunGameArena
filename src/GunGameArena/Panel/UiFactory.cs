@@ -16,6 +16,7 @@ namespace GunGameArena.Panel
         private static Font _font;
         private static Sprite _uiSprite;
         private static bool _spriteTried;
+        private static bool _usingFallbackSprite;
 
         public static Font Font
         {
@@ -30,7 +31,11 @@ namespace GunGameArena.Panel
                 {
                     // Unity 5.6's Resources has no GetBuiltinExtraResource; GetBuiltinResource is the only lookup available here.
                     try { _uiSprite = Resources.GetBuiltinResource<Sprite>("UI/Skin/UISprite.psd"); } catch { _uiSprite = null; }
-                    if (_uiSprite == null) _uiSprite = GunGameArena.Portraits.Sprites.Solid;
+                    if (_uiSprite == null)
+                    {
+                        _uiSprite = GunGameArena.Portraits.Sprites.Solid;
+                        _usingFallbackSprite = true;
+                    }
                     _spriteTried = true;
                 }
                 return _uiSprite;
@@ -72,8 +77,8 @@ namespace GunGameArena.Panel
         {
             var rt = MakeRect(parent, name, pos, size);
             var img = rt.gameObject.AddComponent<Image>();
-            img.sprite = UiSprite;
-            img.type = Image.Type.Sliced;
+            img.sprite = UiSprite; // accessing the property resolves _usingFallbackSprite before we read it below
+            img.type = _usingFallbackSprite ? Image.Type.Simple : Image.Type.Sliced;
             img.color = Color.white;
 
             var btn = rt.gameObject.AddComponent<Button>();

@@ -44,7 +44,7 @@ namespace GunGameArena
             }
             catch (Exception e)
             {
-                Log.LogError(Name + " failed to initialise and is disabled: " + e);
+                Log.LogError(Name + " failed during initialisation: " + e + " — features may be partially active.");
             }
         }
 

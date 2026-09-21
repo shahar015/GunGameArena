@@ -37,8 +37,9 @@ namespace GunGameArena.Patches
                     int want = __state.Contestant.Iff;
                     if (__result.SpawnedSosig.GetIFF() != want) __result.SpawnedSosig.SetIFF(want);
                 }
-                Plugin.Log.LogInfo("Spawned " + __state.Contestant + " as " + __result.SosigType
-                                   + " (game IFF " + __result.SpawnedSosig.GetIFF() + ")");
+                if (ArenaConfig.DebugLogging.Value)
+                    Plugin.Log.LogInfo("Spawned " + __state.Contestant + " as " + __result.SosigType
+                                       + " (game IFF " + __result.SpawnedSosig.GetIFF() + ")");
                 if (SosigBound != null) SosigBound(__state);
                 Roster.RaiseChanged();
             }

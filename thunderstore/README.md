@@ -9,9 +9,13 @@ A companion plugin for Kodeman's **GunGame**. Works on every GunGame map and wit
 - **Natural match flow**: spread-out spawns, sosigs hold grudges against a few rivals at a time, a share of them hunt you, and each has a skill tier (Rookie to Elite) that changes aim, not fire rate.
 - **Leaderboard HUD**: floating Arsenal-style cards with sosig head portraits, generated usernames, kill counts, crowns and team colours. Your card uses your Steam avatar.
 
+The victory banner is part of the leaderboard HUD; with the leaderboard off the round still ends at the points target.
+
 ## Config
 
 `BepInEx/config/shaha.GunGameArena.cfg` after first launch. Sections: `Arena` (Mode, TeamCount, AllySosigs), `Leaderboard` (size, distance, names), `Behaviour` (spawns, grudges, hunters, tiers), `Tier.*` multipliers.
+
+Debug: `[Debug] Verbose = true` writes diagnostic dumps to the BepInEx log.
 
 Sosig count is GunGame's own setting on the in-map panel.
 

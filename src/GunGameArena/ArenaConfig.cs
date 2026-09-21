@@ -17,6 +17,8 @@ namespace GunGameArena
         public static ConfigEntry<bool> TeamTint;
         // Panel
         public static ConfigEntry<float> PanelScale;
+        // Debug
+        public static ConfigEntry<bool> DebugLogging;
         // Leaderboard
         public static ConfigEntry<bool> LeaderboardEnabled;
         public static ConfigEntry<int> TopCount;
@@ -56,6 +58,8 @@ namespace GunGameArena
             TeamTint = cfg.Bind("Teams", "TeamTint", true, "Tint your teammates' bodies blue so you can tell them apart.");
 
             PanelScale = cfg.Bind("Panel", "Scale", 1.0f, new ConfigDescription("Size multiplier for the in-map Arena panel.", new AcceptableValueRange<float>(0.5f, 2f)));
+
+            DebugLogging = cfg.Bind("Debug", "Verbose", false, "Log diagnostic dumps (panel hierarchy, teammate tag status, per-sosig tint) at Info level.");
 
             LeaderboardEnabled = cfg.Bind("Leaderboard", "Enabled", true, "Show the floating leaderboard HUD.");
             TopCount = cfg.Bind("Leaderboard", "TopCount", 5, new ConfigDescription("Cards shown before your own card is pinned at the end.", new AcceptableValueRange<int>(1, 12)));

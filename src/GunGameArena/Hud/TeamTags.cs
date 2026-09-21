@@ -18,6 +18,7 @@ namespace GunGameArena.Hud
         private readonly Dictionary<Slot, Text> _tags = new Dictionary<Slot, Text>();
         private readonly Dictionary<Slot, GameObject> _tagRoots = new Dictionary<Slot, GameObject>();
         private readonly Dictionary<Slot, Canvas> _tagCanvases = new Dictionary<Slot, Canvas>();
+        private readonly List<Slot> _dead = new List<Slot>();
         private Font _font;
         private float _nextDiag;
 
@@ -32,7 +33,7 @@ namespace GunGameArena.Hud
         {
             try
             {
-                if (Roster.Mode != TeamMode.Teams) return;
+                if (Roster.Mode != TeamMode.Teams) { DestroyInstance(); return; }
                 if (_instance == null) _instance = new GameObject("GunGameArena_TeamTags").AddComponent<TeamTags>();
                 int living = 0;
                 foreach (var slot in Roster.LivingSosigSlots())
@@ -40,30 +41,34 @@ namespace GunGameArena.Hud
                     living++;
                     _instance.EnsureTag(slot);
                 }
-                Plugin.Log.LogInfo("TeamTags.OnRoundStarted: " + living + " living slots, " + _instance._tags.Count + " tags created");
+                if (ArenaConfig.DebugLogging.Value)
+                    Plugin.Log.LogInfo("TeamTags.OnRoundStarted: " + living + " living slots, " + _instance._tags.Count + " tags created");
             }
             catch (Exception e) { Plugin.Log.LogError("TeamTags.OnRoundStarted: " + e); }
         }
 
         private static void OnRoundEnded()
         {
-            try
-            {
-                if (_instance != null)
-                {
-                    // Belt and braces: tags are parented under the instance so destroying it should
-                    // take them with it, but explicitly destroy each tag's canvas first in case a
-                    // tag was ever left unparented (e.g. by future code that changes EnsureTag).
-                    foreach (var text in _instance._tags.Values)
-                        if (text != null && text.canvas != null) Destroy(text.canvas.gameObject);
-                    _instance._tags.Clear();
-                    _instance._tagRoots.Clear();
-                    _instance._tagCanvases.Clear();
-                    Destroy(_instance.gameObject);
-                }
-                _instance = null;
-            }
+            try { DestroyInstance(); }
             catch (Exception e) { Plugin.Log.LogError("TeamTags.OnRoundEnded: " + e); }
+        }
+
+        /// <summary>Tears down the singleton instance and every tag it owns. Shared by OnRoundEnded
+        /// (round over) and OnRoundStarted (a round starting in a non-Teams mode) so neither path can
+        /// leave a stale instance or tags behind.</summary>
+        private static void DestroyInstance()
+        {
+            if (_instance == null) return;
+            // Belt and braces: tags are parented under the instance so destroying it should
+            // take them with it, but explicitly destroy each tag's canvas first in case a
+            // tag was ever left unparented (e.g. by future code that changes EnsureTag).
+            foreach (var text in _instance._tags.Values)
+                if (text != null && text.canvas != null) Destroy(text.canvas.gameObject);
+            _instance._tags.Clear();
+            _instance._tagRoots.Clear();
+            _instance._tagCanvases.Clear();
+            Destroy(_instance.gameObject);
+            _instance = null;
         }
 
         private static void OnSosigBound(Slot slot)
@@ -110,10 +115,13 @@ namespace GunGameArena.Hud
             _tagRoots[slot] = go;
             _tagCanvases[slot] = canvas;
 
-            Vector3 anchorPos = (slot.Sosig.Links != null && slot.Sosig.Links.Count > 0 && slot.Sosig.Links[0] != null)
-                ? slot.Sosig.Links[0].transform.position
-                : slot.Sosig.transform.position;
-            Plugin.Log.LogInfo("TeamTags: tag created for " + slot.Contestant.Name + " at " + anchorPos);
+            if (ArenaConfig.DebugLogging.Value)
+            {
+                Vector3 anchorPos = (slot.Sosig.Links != null && slot.Sosig.Links.Count > 0 && slot.Sosig.Links[0] != null)
+                    ? slot.Sosig.Links[0].transform.position
+                    : slot.Sosig.transform.position;
+                Plugin.Log.LogInfo("TeamTags: tag created for " + slot.Contestant.Name + " at " + anchorPos);
+            }
         }
 
         private void LateUpdate()
@@ -124,7 +132,7 @@ namespace GunGameArena.Hud
                 if (body == null || body.Head == null) return;
                 Vector3 head = body.Head.position;
                 float range = ArenaConfig.TagRange.Value;
-                var dead = new List<Slot>();
+                _dead.Clear();
                 foreach (var kv in _tags)
                 {
                     Slot slot = kv.Key; Text text = kv.Value;
@@ -135,8 +143,8 @@ namespace GunGameArena.Hud
                         // Do NOT test text.canvas here: a tag hidden via canvas.enabled = false still
                         // reports text.canvas == null on some Unity versions once disabled, which used
                         // to make LateUpdate mistake a merely-hidden tag for a dead one and destroy it.
-                        if (text == null || !hasRoot || root == null) { dead.Add(slot); continue; }
-                        if (slot.IsVacant || !slot.Contestant.IsAlive) { Destroy(root); dead.Add(slot); continue; }
+                        if (text == null || !hasRoot || root == null) { _dead.Add(slot); continue; }
+                        if (slot.IsVacant || !slot.Contestant.IsAlive) { Destroy(root); _dead.Add(slot); continue; }
                         Transform anchor = (slot.Sosig.Links != null && slot.Sosig.Links.Count > 0 && slot.Sosig.Links[0] != null) ? slot.Sosig.Links[0].transform : slot.Sosig.transform;
                         Transform tag = root.transform;
                         tag.position = anchor.position + Vector3.up * HeightAboveHead;
@@ -154,11 +162,15 @@ namespace GunGameArena.Hud
                         // else: no canvas reference on record — leave the tag visible rather than risk
                         // hiding it with no way to bring it back.
                     }
-                    catch (Exception e) { Plugin.Log.LogError("TeamTags.LateUpdate (tag " + slot.Contestant.Name + "): " + e); }
+                    catch (Exception e)
+                    {
+                        string who = slot != null && slot.Contestant != null ? slot.Contestant.Name : "?";
+                        Plugin.Log.LogError("TeamTags.LateUpdate (tag " + who + "): " + e);
+                    }
                 }
-                for (int i = 0; i < dead.Count; i++) { _tags.Remove(dead[i]); _tagRoots.Remove(dead[i]); _tagCanvases.Remove(dead[i]); }
+                for (int i = 0; i < _dead.Count; i++) { _tags.Remove(_dead[i]); _tagRoots.Remove(_dead[i]); _tagCanvases.Remove(_dead[i]); }
 
-                if (Time.time >= _nextDiag)
+                if (ArenaConfig.DebugLogging.Value && Time.time >= _nextDiag)
                 {
                     _nextDiag = Time.time + DiagIntervalSeconds;
                     try

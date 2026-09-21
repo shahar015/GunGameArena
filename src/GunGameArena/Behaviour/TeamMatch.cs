@@ -137,6 +137,10 @@ namespace GunGameArena.Behaviour
 
         private static void Lock(WeaponCountOption option)
         {
+            // Restore the previous option's buttons/colours before locking the new one, so re-locking
+            // (e.g. a scene change onto a new WeaponCountOption) never dims an already-dimmed graphic
+            // or loses track of its original colour.
+            if (_locked) Unlock();
             _lockedPointables.Clear(); _lockedColliders.Clear(); _originalColors.Clear();
             var buttons = UnityEngine.Object.FindObjectsOfType<Button>();
             int matched = 0;

@@ -100,7 +100,8 @@ namespace GunGameArena
 
             Active = true;
             Plugin.Log.LogInfo("Roster reset: " + sosigCount + " sosigs, mode " + mode + ", player IFF " + playerIff);
-            for (int i = 0; i < SosigSlots.Count; i++) Plugin.Log.LogInfo("  slot " + i + ": " + SosigSlots[i].Contestant + " tier " + SosigSlots[i].Contestant.Tier);
+            if (ArenaConfig.DebugLogging.Value)
+                for (int i = 0; i < SosigSlots.Count; i++) Plugin.Log.LogInfo("  slot " + i + ": " + SosigSlots[i].Contestant + " tier " + SosigSlots[i].Contestant.Tier);
             RaiseChanged();
         }
 
