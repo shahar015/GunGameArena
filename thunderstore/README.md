@@ -119,5 +119,6 @@ design, to keep the panel simple.
 
 ## Credits & source
 
-Kodeman for GunGame, which this plugin extends without forking. Built with BepInEx and
-Harmony. Source: <https://github.com/shahar015/GunGameArena>. MIT licensed.
+Published by **ZGames**. Kodeman for GunGame, which this plugin extends without forking.
+Built with BepInEx and Harmony. Source: <https://github.com/shahar015/GunGameArena>.
+MIT licensed.
