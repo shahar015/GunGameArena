@@ -15,6 +15,8 @@ GunGame Progressions.
 
 ▶ [Watch a Free For All round (video)](https://github.com/shahar015/GunGameArena/blob/main/media/ffa-gungame-showcase.mp4)
 
+![In-map Arena panel — every option is a laser-pointer click away](https://raw.githubusercontent.com/shahar015/GunGameArena/main/media/ffa-settings.jpg)
+
 ## Modes
 
 - **Free For All** — every sosig for itself, including against you. Sosigs hold grudges
@@ -53,6 +55,8 @@ or team has a kill). In Team Deathmatch the header also shows each team's runnin
 a subtitle naming the points target, and the victory banner rides on this HUD.
 
 ## In-map Arena panel
+
+![In-map Arena panel in Team Deathmatch — Points to win and Friendly fire rows live, beside GunGame's own board](https://raw.githubusercontent.com/shahar015/GunGameArena/main/media/tdm-settings.jpg)
 
 A settings panel appears on every GunGame map, standing beside GunGame's own "More
 options" board, so you never have to leave VR to change how the round plays. Point and

@@ -18,6 +18,8 @@ it, so it works on every GunGame map and with GunGame Progressions.
 
 ▶ [Watch a Free For All round (video)](https://github.com/shahar015/GunGameArena/blob/main/media/ffa-gungame-showcase.mp4)
 
+![In-map Arena panel — every option is a laser-pointer click away](https://raw.githubusercontent.com/shahar015/GunGameArena/main/media/ffa-settings.jpg)
+
 ## Install
 
 - **Thunderstore Mod Manager / r2modman**: search for "GunGame Arena" and install it
