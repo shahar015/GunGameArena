@@ -11,7 +11,7 @@ namespace GunGameArena
     {
         public const string Guid = "shaha.GunGameArena";
         public const string Name = "GunGame Arena";
-        public const string Version = "0.1.0";
+        public const string Version = "1.0.0";
 
         public static ManualLogSource Log;
         public static Plugin Instance;

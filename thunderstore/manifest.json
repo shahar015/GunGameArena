@@ -1,8 +1,8 @@
 {
   "name": "GunGameArena",
-  "version_number": "0.1.0",
-  "website_url": "https://github.com/shaha/GunGameArena",
-  "description": "GunGame companion: sosigs fight each other (FFA or teams), smarter match flow, and a Roblox-style leaderboard with portraits.",
+  "version_number": "1.0.0",
+  "website_url": "https://github.com/shahar015/GunGameArena",
+  "description": "GunGame companion: Free For All or Team Deathmatch sosig combat, an in-map settings panel, and a Roblox-style leaderboard with portraits.",
   "dependencies": [
     "BepInEx-BepInExPack_H3VR-5.4.1700",
     "Kodeman-GunGame-1.0.2"
