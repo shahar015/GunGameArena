@@ -21,7 +21,7 @@ it, so it works on every GunGame map and with GunGame Progressions.
 ## Install
 
 - **Thunderstore Mod Manager / r2modman**: search for "GunGame Arena" and install it
-  alongside the BepInEx pack for H3VR and Kodeman's GunGame (1.0.2 or newer).
+  alongside the BepInEx pack for H3VR and Kodeman's GunGame (1.0.2 or newer). Dependencies install automatically; add at least one GunGame map (e.g. NuketownGunGame) to have somewhere to play.
 - Manual: drop `GunGameArena.dll` and `GunGameArena.Core.dll` into
   `BepInEx/plugins/GunGameArena/` in your H3VR install.
 

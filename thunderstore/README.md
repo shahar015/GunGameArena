@@ -119,7 +119,7 @@ design, to keep the panel simple.
 
 - Requires **BepInEx pack for H3VR** (5.4.1700) and Kodeman's **GunGame** Thunderstore
   package 1.0.2 or newer (its plugin reports version 1.0.4 internally — that's expected).
-- Works on every GunGame map, and with `HLin_Mods-GunGame_Progressions`.
+- Works on every GunGame map, and with `HLin_Mods-GunGame_Progressions`. You need at least one GunGame map installed to play (for example `localpcnerd-NuketownGunGame` or `GEnigma-SandpitGunGame`); this plugin adds no map of its own.
 - Sosig count is GunGame's own setting on its in-map panel, not this plugin's.
 - Not H3MP-aware; built and tested for single-player.
 
