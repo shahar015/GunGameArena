@@ -78,7 +78,7 @@ everything else applies immediately.
 
 ## Config
 
-Settings live in `BepInEx/config/shaha.GunGameArena.cfg` after the first launch. The panel
+Settings live in `BepInEx/config/zgames.GunGameArena.cfg` after the first launch. The panel
 above covers the values you'll actually want to touch mid-session; the rest (rival radius,
 skill-tier multipliers, HUD placement, name seed, and so on) are config-file only by
 design, to keep the panel simple.

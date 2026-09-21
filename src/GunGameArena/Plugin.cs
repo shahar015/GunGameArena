@@ -9,9 +9,9 @@ namespace GunGameArena
     [BepInDependency("Kodeman.GunGame", "1.0.4")]
     public class Plugin : BaseUnityPlugin
     {
-        public const string Guid = "shaha.GunGameArena";
+        public const string Guid = "zgames.GunGameArena";
         public const string Name = "GunGame Arena";
-        public const string Version = "1.0.0";
+        public const string Version = "1.0.1";
 
         public static ManualLogSource Log;
         public static Plugin Instance;
@@ -24,6 +24,7 @@ namespace GunGameArena
             Log = Logger;
             try
             {
+                ConfigMigration.MigrateLegacyConfig(Config.ConfigFilePath);
                 ArenaConfig.Bind(Config);
                 _harmony = new Harmony(Guid);
                 _harmony.PatchAll(typeof(Plugin).Assembly);

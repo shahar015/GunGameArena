@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.1
+
+Plugin id is now `zgames.GunGameArena`; settings file renamed to
+`BepInEx/config/zgames.GunGameArena.cfg`. Existing `shaha.GunGameArena.cfg` files are
+copied over automatically on first launch, so nothing is lost.
+
 ## 1.0.0
 
 Initial public release.

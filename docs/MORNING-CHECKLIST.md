@@ -4,7 +4,7 @@ Everything below was built and code-reviewed overnight but has **not** been run 
 The plugin DLL is already in your Thunderstore profile (`Default`), so just launch H3VR from the mod manager.
 
 Log file: `%APPDATA%\Thunderstore Mod Manager\DataFolder\H3VR\profiles\Default\BepInEx\LogOutput.log`
-Config file (created on first launch): `...\profiles\Default\BepInEx\config\shaha.GunGameArena.cfg`
+Config file (created on first launch): `...\profiles\Default\BepInEx\config\zgames.GunGameArena.cfg`
 
 Tip: after each session, search the log for `GunGame Arena` and paste anything with `[Error` back to me.
 
@@ -65,11 +65,11 @@ Only needed before publishing to Thunderstore.
 - [ ] Laser pointer + trigger works on every button; toggles flip their ON/OFF text; `<`/`>` step values.
 - [ ] Toggling **Leaderboard** mid-round hides/shows the HUD immediately.
 - [ ] Set Mode to Teams; Teams and Allies rows brighten; Start Game → header "Team Deathmatch".
-- [ ] Values persist: quit, relaunch, panel shows what you set (they are in `shaha.GunGameArena.cfg`).
+- [ ] Values persist: quit, relaunch, panel shows what you set (they are in `zgames.GunGameArena.cfg`).
 
 ## Things you can tune without rebuilding
 
-All in `shaha.GunGameArena.cfg`:
+All in `zgames.GunGameArena.cfg`:
 
 | Want | Change |
 |---|---|

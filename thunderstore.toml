@@ -7,7 +7,7 @@ repository = "https://thunderstore.io"
 [package]
 namespace = "ZGames"
 name = "GunGameArena"
-versionNumber = "1.0.0"
+versionNumber = "1.0.1"
 description = "GunGame companion: Free For All or Team Deathmatch sosig combat, an in-map settings panel, and a Roblox-style leaderboard with portraits."
 websiteUrl = "https://github.com/shahar015/GunGameArena"
 containsNsfwContent = false

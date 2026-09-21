@@ -38,7 +38,7 @@ Canvas 620×760 units (cm), scale 0.01. Background `Image` colour `#2F5FD6` at 0
 Toggle buttons show state in their label. Dimmed rows set text alpha 0.4 and keep buttons working.
 
 ### Behaviour
-- Every control writes straight to the `ArenaConfig` entry (`ConfigEntry.Value = …`), which BepInEx persists to `shaha.GunGameArena.cfg` immediately.
+- Every control writes straight to the `ArenaConfig` entry (`ConfigEntry.Value = …`), which BepInEx persists to `zgames.GunGameArena.cfg` immediately.
 - Pure logic (labels, cycling, stepping, clamping, which rows are dimmed) lives in Core `PanelModel` and is unit-tested. The plugin `ArenaPanel` only builds UI and forwards clicks.
 - `LeaderboardHud` gains `public static void SetEnabledLive(bool)`: hides the HUD if visible and disabling; shows it if a round is active and enabling.
 - All click handlers and the installer poll are try/caught and log; a failure never throws into the game.
