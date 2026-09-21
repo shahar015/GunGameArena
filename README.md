@@ -8,7 +8,13 @@ it, so it works on every GunGame map and with GunGame Progressions.
 
 ## Media
 
-<!-- MEDIA -->
+![Free For All leaderboard — the leader wears the crown, you're the outlined card](https://raw.githubusercontent.com/shahar015/GunGameArena/main/media/ffa-leaderboard.jpg)
+
+![Team Deathmatch — blue vs red cards, team scores beside the title, points target underneath](https://raw.githubusercontent.com/shahar015/GunGameArena/main/media/teams-leaderboard.jpg)
+
+![Red team hits the points target — victory banner before the round ends](https://raw.githubusercontent.com/shahar015/GunGameArena/main/media/teams-winning-banner.jpg)
+
+▶ [Watch a Free For All round (video)](https://github.com/shahar015/GunGameArena/blob/main/media/ffa-gungame-showcase.mp4)
 
 ## Install
 
