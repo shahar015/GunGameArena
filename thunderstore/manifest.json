@@ -1,6 +1,6 @@
 {
   "name": "GunGameArena",
-  "version_number": "1.0.1",
+  "version_number": "1.0.2",
   "website_url": "https://github.com/shahar015/GunGameArena",
   "description": "GunGame companion: Free For All or Team Deathmatch sosig combat, an in-map settings panel, and a Roblox-style leaderboard with portraits.",
   "dependencies": [

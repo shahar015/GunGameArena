@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.2
+
+- Mod page: added screenshots of the in-map Arena panel (Free For All and Team Deathmatch). No gameplay changes.
+
 ## 1.0.1
 
 Plugin id is now `zgames.GunGameArena`; settings file renamed to
